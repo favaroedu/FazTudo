@@ -1,110 +1,98 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, Text, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import logo from './assets/logo.png'; // ajuste o caminho conforme seu projeto
 
-const CadastroScreen = ({ navigation }) => {
-  const [nome, setNome] = useState('');
+export default function App() {
   const [email, setEmail] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [senha, setSenha] = useState('');
 
-  const handleCadastro = async () => {
-    if (!nome || !email) {
-      setErrorMessage('Por favor, preencha todos os campos.');
+  const handleLogin = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('email');
+      const savedSenha = await AsyncStorage.getItem('senha');
+
+      if (email === savedEmail && senha === savedSenha) {
+        Alert.alert('Login realizado!');
+      } else {
+        Alert.alert('Email ou senha incorretos');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleCadastrar = async () => {
+    if (!email || !senha) {
+      Alert.alert('Preencha todos os campos');
       return;
     }
-
-    try {
-      await AsyncStorage.setItem('usuario', JSON.stringify({ nome, email }));
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
-      setNome('');
-      setEmail('');
-      setErrorMessage('');
-      // Redirecionamento de cadastro.
-      // navigation.navigate('Home'); 
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar os dados.');
-      console.error(error);
-    }
+    await AsyncStorage.setItem('email', email);
+    await AsyncStorage.setItem('senha', senha);
+    Alert.alert('Cadastro realizado!');
   };
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('./assets/logo.png')} 
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      
-      <Text style={styles.label}>Nome:</Text>
+      <Image source={logo} style={styles.logo} />
       <TextInput
         style={styles.input}
-        placeholder="Digite seu nome"
-        value={nome}
-        onChangeText={setNome}
-      />
-      
-      <Text style={styles.label}>E-mail:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Digite seu e-mail"
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
-      
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-
-      <View style={styles.buttonContainer}>
-        <Button 
-          title="Sou Autônomo" 
-          onPress={handleCadastro} // Adicionar a lógica de navegação
-        />
-        <Button 
-          title="Pesquisar por Profissionais" 
-          onPress={() => {/* Adicionar a logica */}} 
-        />
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Senha"
+        value={senha}
+        onChangeText={setSenha}
+        secureTextEntry
+      />
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Entrar</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={handleCadastrar}>
+        <Text style={styles.buttonText}>Cadastrar</Text>
+      </TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  logo: {
-    width: 250,  // 
-    height: 250, // 
-    alignSelf: 'center', // 
-    marginBottom: 20, // 
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 12,
-    paddingLeft: 10,
+    padding: 20,
     backgroundColor: '#fff',
   },
-  error: {
-    color: 'red',
-    marginBottom: 12,
+  logo: {
+    width: 350,       // maior largura
+    height: 350,      // maior altura
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 30,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+  },
+  button: {
+    backgroundColor: '#1E90FF',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  buttonSecondary: {
+    backgroundColor: '#32CD32',
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
-
-export default CadastroScreen;
