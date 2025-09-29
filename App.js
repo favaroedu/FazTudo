@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import logo from './assets/logo.png'; // ajuste o caminho conforme seu projeto
+import logo from './assets/logo.png'; 
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 350,       // maior largura
-    height: 350,      // maior altura
+    width: 350,     
+    height: 350,     
     resizeMode: 'contain',
     alignSelf: 'center',
     marginBottom: 30,
@@ -82,13 +82,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   button: {
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#00255f',
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
   },
   buttonSecondary: {
-    backgroundColor: '#32CD32',
+    backgroundColor: '#fd951dff',
   },
   buttonText: {
     color: '#fff',
