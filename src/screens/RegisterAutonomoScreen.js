@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert, ScrollView, TextInput } from "react-native";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { Picker } from '@react-native-picker/picker';
-
+import { Picker } from "@react-native-picker/picker";
 
 export default function RegisterAutonomoScreen({ goTo }) {
   const [nome, setNome] = useState("");
@@ -13,7 +12,27 @@ export default function RegisterAutonomoScreen({ goTo }) {
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [servico, setServico] = useState("Pedreiro");
+  const [servico, setServico] = useState("");
+
+  const servicos = [
+    "Pedreiro",
+    "Eletricista",
+    "Pintor",
+    "Encanador",
+    "Jardineiro",
+    "Diarista",
+    "Técnico de Informática",
+    "Técnico de Internet",
+    "Vidraceiro",
+    "Marceneiro",
+    "Técnico em ar-condicionado",
+    "Gesseiro",
+    "Costureira",
+  ];
+
+  const servicosOrdenados = servicos.sort((a, b) =>
+    a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+  );
 
   const validarSenha = (senha) => {
     const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
@@ -61,7 +80,9 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Cadastro de Profissional</Text>
+      <View style={styles.header}>
+  <Text style={styles.headerText}>Cadastro de Profissional</Text>
+</View>
       <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
       <Input placeholder="RG" value={rg} onChangeText={setRg} />
       <Input placeholder="CPF" value={cpf} onChangeText={setCpf} />
@@ -80,10 +101,10 @@ export default function RegisterAutonomoScreen({ goTo }) {
         style={styles.picker}
         onValueChange={(itemValue) => setServico(itemValue)}
       >
-        <Picker.Item label="Pedreiro" value="Pedreiro" />
-        <Picker.Item label="Eletricista" value="Eletricista" />
-        <Picker.Item label="Pintor" value="Pintor" />
-        <Picker.Item label="Encanador" value="Encanador" />
+        <Picker.Item label="Selecione um serviço..." value="" />
+        {servicosOrdenados.map((item) => (
+          <Picker.Item key={item} label={item} value={item} />
+        ))}
       </Picker>
       <Button title="Cadastrar" onPress={handleSubmit} />
       <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
@@ -92,6 +113,21 @@ export default function RegisterAutonomoScreen({ goTo }) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+  backgroundColor: "#ff9900ff", 
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginBottom: 20,
+  alignItems: "center",
+},
+
+headerText: {
+  color: "#fff",
+  fontSize: 22,
+  fontWeight: "bold",
+},
+
   container: {
     padding: 20,
     backgroundColor: "#fff",
