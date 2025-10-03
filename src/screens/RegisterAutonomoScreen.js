@@ -3,12 +3,19 @@ import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { Picker } from "@react-native-picker/picker";
+import { TextInputMask } from "react-native-masked-text";
 
 export default function RegisterAutonomoScreen({ goTo }) {
   const [nome, setNome] = useState("");
   const [rg, setRg] = useState("");
   const [cpf, setCpf] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+  const [ddd, setDdd] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -39,12 +46,39 @@ export default function RegisterAutonomoScreen({ goTo }) {
     return regex.test(senha);
   };
 
+  const buscarEndereco = async () => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    if (cepLimpo.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        Alert.alert("CEP inválido", "Não foi possível encontrar o endereço.");
+        return;
+      }
+
+      setLogradouro(data.logradouro);
+      setBairro(data.bairro);
+      setCidade(data.localidade);
+      setUf(data.uf);
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível buscar o endereço.");
+    }
+  };
+
   const handleSubmit = () => {
     if (
       !nome ||
       !rg ||
       !cpf ||
-      !endereco ||
+      !cep ||
+      !numero ||
+      !logradouro ||
+      !bairro ||
+      !cidade ||
+      !uf ||
       !telefone ||
       !email ||
       !senha ||
@@ -62,16 +96,20 @@ export default function RegisterAutonomoScreen({ goTo }) {
       return;
     }
 
+    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${uf}`;
+    const telefoneCompleto = `(${ddd}) ${telefone}`;
+
     const dados = {
-      nome,
-      rg,
-      cpf,
-      endereco,
-      telefone,
-      email,
-      senha,
-      servico,
-    };
+  nome,
+  rg,
+  cpf,
+  endereco: enderecoCompleto,
+  telefone: telefoneCompleto,
+  email,
+  senha,
+  servico,
+};
+
 
     console.log("Dados enviados:", dados);
     Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
@@ -81,13 +119,65 @@ export default function RegisterAutonomoScreen({ goTo }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-  <Text style={styles.headerText}>Cadastro de Profissional</Text>
-</View>
+        <Text style={styles.headerText}>Cadastro de Profissional</Text>
+      </View>
+
       <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
       <Input placeholder="RG" value={rg} onChangeText={setRg} />
       <Input placeholder="CPF" value={cpf} onChangeText={setCpf} />
-      <Input placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
-      <Input placeholder="Telefone" value={telefone} onChangeText={setTelefone} />
+
+      <View style={styles.row}>
+        <View style={styles.cepContainer}>
+          <Text style={styles.label}>CEP:</Text>
+          <TextInputMask
+            type={"zip-code"}
+            value={cep}
+            onChangeText={setCep}
+            onBlur={buscarEndereco}
+            style={styles.input}
+          />
+        </View>
+
+        <View style={styles.numeroContainer}>
+          <Text style={styles.label}>Número:</Text>
+          <Input placeholder="Número" value={numero} onChangeText={setNumero} />
+        </View>
+      </View>
+
+      <Input placeholder="Logradouro" value={logradouro} onChangeText={setLogradouro} />
+      <Input placeholder="Bairro" value={bairro} onChangeText={setBairro} />
+      <Input placeholder="Cidade" value={cidade} onChangeText={setCidade} />
+      <Input placeholder="Estado (UF)" value={uf} onChangeText={setUf} />
+      <View style={styles.row}>
+  <View style={styles.dddContainer}>
+    <Text style={styles.label}>DDD:</Text>
+    <TextInputMask
+      type={"custom"}
+      options={{ mask: "99" }}
+      value={ddd}
+      onChangeText={setDdd}
+      style={styles.input}
+      keyboardType="numeric"
+    />
+  </View>
+
+  <View style={styles.telefoneContainer}>
+    <Text style={styles.label}>Telefone:</Text>
+    <TextInputMask
+      type={"cel-phone"}
+      options={{
+        maskType: "BRL",
+        withDDD: false,
+        dddMask: "(99) ",
+      }}
+      value={telefone}
+      onChangeText={setTelefone}
+      style={styles.input}
+      keyboardType="phone-pad"
+    />
+  </View>
+</View>
+
       <Input placeholder="Email" value={email} onChangeText={setEmail} />
       <Input
         placeholder="Senha"
@@ -95,6 +185,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
         onChangeText={setSenha}
         secureTextEntry
       />
+
       <Text style={styles.label}>Serviço oferecido:</Text>
       <Picker
         selectedValue={servico}
@@ -106,6 +197,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
           <Picker.Item key={item} label={item} value={item} />
         ))}
       </Picker>
+
       <Button title="Cadastrar" onPress={handleSubmit} />
       <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
     </ScrollView>
@@ -113,32 +205,24 @@ export default function RegisterAutonomoScreen({ goTo }) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-  backgroundColor: "#ff9900ff", 
-  paddingVertical: 12,
-  paddingHorizontal: 20,
-  borderRadius: 8,
-  marginBottom: 20,
-  alignItems: "center",
-},
-
-headerText: {
-  color: "#fff",
-  fontSize: 22,
-  fontWeight: "bold",
-},
-
   container: {
     padding: 20,
     backgroundColor: "#fff",
     flexGrow: 1,
     justifyContent: "center",
   },
-  title: {
+  header: {
+    backgroundColor: "#ff9100ff",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  headerText: {
+    color: "#fff",
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
   },
   label: {
     marginTop: 10,
@@ -150,4 +234,28 @@ headerText: {
     width: "100%",
     marginBottom: 20,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  cepContainer: {
+    flex: 1.2,
+  },
+  numeroContainer: {
+    flex: 1,
+  },
+  dddContainer: {
+  flex: 0.7,
+},
+telefoneContainer: {
+  flex: 2,
+},
 });
