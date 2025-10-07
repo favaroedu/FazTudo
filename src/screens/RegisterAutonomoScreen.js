@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import { Picker } from "@react-native-picker/picker";
 import { TextInputMask } from "react-native-masked-text";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterAutonomoScreen({ goTo }) {
   const [nome, setNome] = useState("");
@@ -117,11 +118,12 @@ export default function RegisterAutonomoScreen({ goTo }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Cadastro de Profissional</Text>
-      </View>
+  <SafeAreaView style={styles.safeArea}>
+    <View style={styles.header}>
+      <Text style={styles.headerText}>Cadastro de Profissional</Text>
+    </View>
 
+    <ScrollView contentContainerStyle={styles.container}>
       <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
       <Input placeholder="RG" value={rg} onChangeText={setRg} />
       <Input placeholder="CPF" value={cpf} onChangeText={setCpf} />
@@ -148,43 +150,39 @@ export default function RegisterAutonomoScreen({ goTo }) {
       <Input placeholder="Bairro" value={bairro} onChangeText={setBairro} />
       <Input placeholder="Cidade" value={cidade} onChangeText={setCidade} />
       <Input placeholder="Estado (UF)" value={uf} onChangeText={setUf} />
-      <View style={styles.row}>
-  <View style={styles.dddContainer}>
-    <Text style={styles.label}>DDD:</Text>
-    <TextInputMask
-      type={"custom"}
-      options={{ mask: "99" }}
-      value={ddd}
-      onChangeText={setDdd}
-      style={styles.input}
-      keyboardType="numeric"
-    />
-  </View>
 
-  <View style={styles.telefoneContainer}>
-    <Text style={styles.label}>Telefone:</Text>
-    <TextInputMask
-      type={"cel-phone"}
-      options={{
-        maskType: "BRL",
-        withDDD: false,
-        dddMask: "(99) ",
-      }}
-      value={telefone}
-      onChangeText={setTelefone}
-      style={styles.input}
-      keyboardType="phone-pad"
-    />
-  </View>
-</View>
+      <View style={styles.row}>
+        <View style={styles.dddContainer}>
+          <Text style={styles.label}>DDD:</Text>
+          <TextInputMask
+            type={"custom"}
+            options={{ mask: "99" }}
+            value={ddd}
+            onChangeText={setDdd}
+            style={styles.input}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.telefoneContainer}>
+          <Text style={styles.label}>Telefone:</Text>
+          <TextInputMask
+            type={"cel-phone"}
+            options={{
+              maskType: "BRL",
+              withDDD: false,
+              dddMask: "(99) ",
+            }}
+            value={telefone}
+            onChangeText={setTelefone}
+            style={styles.input}
+            keyboardType="phone-pad"
+          />
+        </View>
+      </View>
 
       <Input placeholder="Email" value={email} onChangeText={setEmail} />
-      <Input
-        placeholder="Senha"
-        value={senha}
-        onChangeText={setSenha}
-        secureTextEntry
-      />
+      <Input placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
 
       <Text style={styles.label}>Serviço oferecido:</Text>
       <Picker
@@ -201,6 +199,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
       <Button title="Cadastrar" onPress={handleSubmit} />
       <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
     </ScrollView>
+  </SafeAreaView>
   );
 }
 
@@ -212,12 +211,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   header: {
-    backgroundColor: "#ff9100ff",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 20,
+    backgroundColor: "#ff9100ff", 
+    paddingVertical: 16,
     alignItems: "center",
+    width: "100%",
   },
   headerText: {
     color: "#fff",
@@ -257,5 +254,9 @@ const styles = StyleSheet.create({
 },
 telefoneContainer: {
   flex: 2,
+},
+safeArea: {
+  flex: 1,
+  backgroundColor: "#fff",
 },
 });

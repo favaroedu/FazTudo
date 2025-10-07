@@ -4,6 +4,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { TextInputMask } from 'react-native-masked-text';
 import { saveCredentials } from '../services/storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen({ goTo }) {
   const [nome, setNome] = useState('');
@@ -53,15 +54,17 @@ export default function RegisterScreen({ goTo }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Cadastro de Usuário</Text>
-      </View>
+  <SafeAreaView style={styles.safeArea}>
+    <View style={styles.header}>
+      <Text style={styles.headerText}>Cadastro de Usuário</Text>
+    </View>
 
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* todo o conteúdo do formulário */}
       <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
       <Text style={styles.label}>CPF:</Text>
       <TextInputMask
-        type={'cpf'}
+        type={"cpf"}
         value={cpf}
         onChangeText={setCpf}
         style={styles.input}
@@ -72,8 +75,8 @@ export default function RegisterScreen({ goTo }) {
         <View style={styles.dddContainer}>
           <Text style={styles.label}>DDD:</Text>
           <TextInputMask
-            type={'custom'}
-            options={{ mask: '99' }}
+            type={"custom"}
+            options={{ mask: "99" }}
             value={ddd}
             onChangeText={setDdd}
             style={styles.input}
@@ -84,8 +87,8 @@ export default function RegisterScreen({ goTo }) {
         <View style={styles.telefoneContainer}>
           <Text style={styles.label}>Telefone:</Text>
           <TextInputMask
-            type={'cel-phone'}
-            options={{ maskType: 'BRL', withDDD: false }}
+            type={"cel-phone"}
+            options={{ maskType: "BRL", withDDD: false }}
             value={telefone}
             onChangeText={setTelefone}
             style={styles.input}
@@ -104,52 +107,57 @@ export default function RegisterScreen({ goTo }) {
       <Input placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
 
       <Button title="Cadastrar" onPress={handleRegister} />
-      <Button title="Voltar" onPress={() => goTo('chooseRegister')} type="secondary" />
+      <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
     </ScrollView>
-  );
+  </SafeAreaView>
+);
+
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   container: {
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   header: {
-    backgroundColor: '#ff9100ff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 20,
-    alignItems: 'center',
+    backgroundColor: "#ff9100ff", 
+    paddingVertical: 16,
+    alignItems: "center",
+    width: "100%",
   },
   headerText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   label: {
     marginTop: 10,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   dddContainer: {
     flex: 0.7,
+    marginRight: 10,
   },
   telefoneContainer: {
     flex: 2,
   },
 });
+
