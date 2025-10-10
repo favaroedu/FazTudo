@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#ff9100ff",
     paddingVertical: 16,
     paddingHorizontal: 20,
     flexDirection: "row",
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
   },
   container: {
