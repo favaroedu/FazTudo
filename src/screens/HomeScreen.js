@@ -73,15 +73,29 @@ export default function HomeScreen({ goTo }) {
       )}
 
       {/* Menu lateral animado */}
-      <Animated.View style={[styles.menuContainer, { left: menuAnim }]}>
-        <View style={styles.menuContent}>
-          <Text style={styles.menuTitle}>Menu</Text>
-          <Button title="Meu Perfil" onPress={() => goTo("profile")} />
-          <Button title="Agendamentos" onPress={() => goTo("agendamentos")} />
-          <Button title="Sair" onPress={() => goTo("login")} type="secondary" />
-          <Button title="Fechar" onPress={fecharMenu} type="secondary" />
-        </View>
-      </Animated.View>
+<Animated.View style={[styles.menuContainer, { left: menuAnim }]}>
+  <View style={styles.menuContent}>
+    {/* Foto e nome do usuário */}
+    <View style={styles.userInfo}>
+      <View style={styles.avatar} />
+      <Text style={styles.userName}>Olá, Usuário!</Text>
+      <Text style={styles.userEmail}>usuario@email.com</Text>
+    </View>
+
+    {/* Opções do menu */}
+    <Button title="Meu Perfil" onPress={() => goTo("profile")} />
+    <Button title="Meus Agendamentos" onPress={() => goTo("agendamentos")} />
+    <Button title="Histórico" onPress={() => goTo("historico")} />
+    <Button title="Mensagens" onPress={() => goTo("mensagens")} />
+    <Button title="Avaliações" onPress={() => goTo("avaliacoes")} />
+    <Button title="Endereço" onPress={() => goTo("endereco")} />
+    <Button title="Configurações" onPress={() => goTo("configuracoes")} />
+    <Button title="Suporte" onPress={() => goTo("suporte")} />
+    <Button title="Sair do aplicativo" onPress={() => goTo("login")} type="secondary" />
+    <Button title="Fechar menu" onPress={fecharMenu} type="secondary" />
+  </View>
+</Animated.View>
+
 
       {/* Conteúdo principal */}
       <View style={styles.container}>
@@ -144,7 +158,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    width: screenWidth * 0.75,
+    width: Dimensions.get("window").width * 0.75,
     backgroundColor: "#f0f0f0",
     zIndex: 20,
     paddingTop: 60,
@@ -156,7 +170,7 @@ const styles = StyleSheet.create({
   },
   menuContent: {
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 0,
   },
   menuTitle: {
     fontSize: 20,
@@ -167,9 +181,29 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    left: screenWidth * 0.75,
+    left: Dimensions.get("window").width * 0.75,
     right: 0,
     backgroundColor: "rgba(0,0,0,0.3)",
     zIndex: 15,
   },
+  userInfo: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#ccc",
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#666",
+  },
 });
+
