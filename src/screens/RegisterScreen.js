@@ -14,6 +14,18 @@ export default function RegisterScreen({ goTo }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
+  const telefoneLimpo = telefone.replace(/\D/g, '');
+
+const camposValidos =
+  nome.trim() &&
+  cpf.trim() &&
+  ddd.trim().length === 2 &&
+  telefoneLimpo.length >= 8 &&
+  telefoneLimpo.length <= 9 &&
+  email.trim() &&
+  validarSenha(senha);
+
+
   const validarSenha = (senha) => {
     const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
     return regex.test(senha);
@@ -106,7 +118,7 @@ export default function RegisterScreen({ goTo }) {
       />
       <Input placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
 
-      <Button title="Cadastrar" onPress={handleRegister} />
+      <Button title="Cadastrar" onPress={handleRegister} disabled={!camposValidos} />
       <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
     </ScrollView>
   </SafeAreaView>
