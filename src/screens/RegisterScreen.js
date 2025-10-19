@@ -14,45 +14,28 @@ export default function RegisterScreen({ goTo }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  const telefoneLimpo = telefone.replace(/\D/g, '');
-
-const camposValidos =
-  nome.trim() &&
-  cpf.trim() &&
-  ddd.trim().length === 2 &&
-  telefoneLimpo.length >= 8 &&
-  telefoneLimpo.length <= 9 &&
-  email.trim() &&
-  validarSenha(senha);
-
-
+  // Validação segura da senha
   const validarSenha = (senha) => {
+    if (!senha || senha.length < 8) return false;
     const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
     return regex.test(senha);
   };
 
+  // Verificação dos campos obrigatórios
+  const telefoneLimpo = telefone.replace(/\D/g, '');
+  const camposValidos =
+    nome.trim() &&
+    cpf.trim() &&
+    ddd.trim().length === 2 &&
+    telefoneLimpo.length >= 8 &&
+    telefoneLimpo.length <= 9 &&
+    email.trim() &&
+    senha.trim() &&
+    validarSenha(senha);
+
   const handleRegister = async () => {
-    if (!nome || !cpf || !ddd || !telefone || !email || !senha) {
-      Alert.alert('Preencha todos os campos');
-      return;
-    }
-
-    if (ddd.length !== 2) {
-      Alert.alert('DDD inválido', 'O DDD deve conter 2 dígitos.');
-      return;
-    }
-
-    const telefoneLimpo = telefone.replace(/\D/g, '');
-    if (telefoneLimpo.length < 8 || telefoneLimpo.length > 9) {
-      Alert.alert('Telefone inválido', 'O número deve conter entre 8 e 9 dígitos.');
-      return;
-    }
-
-    if (!validarSenha(senha)) {
-      Alert.alert(
-        'Senha inválida',
-        'A senha deve ter no mínimo 8 caracteres, incluindo pelo menos 1 número e 1 caractere especial.'
-      );
+    if (!camposValidos) {
+      Alert.alert('Preencha todos os campos corretamente');
       return;
     }
 
@@ -66,64 +49,68 @@ const camposValidos =
   };
 
   return (
-  <SafeAreaView style={styles.safeArea}>
-    <View style={styles.header}>
-      <Text style={styles.headerText}>Cadastro de Usuário</Text>
-    </View>
-
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* todo o conteúdo do formulário */}
-      <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
-      <Text style={styles.label}>CPF:</Text>
-      <TextInputMask
-        type={"cpf"}
-        value={cpf}
-        onChangeText={setCpf}
-        style={styles.input}
-        keyboardType="numeric"
-      />
-
-      <View style={styles.row}>
-        <View style={styles.dddContainer}>
-          <Text style={styles.label}>DDD:</Text>
-          <TextInputMask
-            type={"custom"}
-            options={{ mask: "99" }}
-            value={ddd}
-            onChangeText={setDdd}
-            style={styles.input}
-            keyboardType="numeric"
-          />
-        </View>
-
-        <View style={styles.telefoneContainer}>
-          <Text style={styles.label}>Telefone:</Text>
-          <TextInputMask
-            type={"cel-phone"}
-            options={{ maskType: "BRL", withDDD: false }}
-            value={telefone}
-            onChangeText={setTelefone}
-            style={styles.input}
-            keyboardType="phone-pad"
-          />
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Cadastro de Usuário</Text>
       </View>
 
-      <Input
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <Input placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
+      <ScrollView contentContainerStyle={styles.container}>
+        <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
 
-      <Button title="Cadastrar" onPress={handleRegister} disabled={!camposValidos} />
-      <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
-    </ScrollView>
-  </SafeAreaView>
-);
+        <Text style={styles.label}>CPF:</Text>
+        <TextInputMask
+          type={"cpf"}
+          value={cpf}
+          onChangeText={setCpf}
+          style={styles.input}
+          keyboardType="numeric"
+        />
 
+        <View style={styles.row}>
+          <View style={styles.dddContainer}>
+            <Text style={styles.label}>DDD:</Text>
+            <TextInputMask
+              type={"custom"}
+              options={{ mask: "99" }}
+              value={ddd}
+              onChangeText={setDdd}
+              style={styles.input}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.telefoneContainer}>
+            <Text style={styles.label}>Telefone:</Text>
+            <TextInputMask
+              type={"cel-phone"}
+              options={{ maskType: "BRL", withDDD: false }}
+              value={telefone}
+              onChangeText={setTelefone}
+              style={styles.input}
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
+
+        <Input
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <Input
+          placeholder="Senha"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
+        />
+
+        <Button title="Cadastrar" onPress={handleRegister} disabled={!camposValidos} />
+        <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -172,4 +159,3 @@ const styles = StyleSheet.create({
     flex: 2,
   },
 });
-
