@@ -1,51 +1,101 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
-import Input from '../components/Input';
-import Button from '../components/Button';
-import { TextInputMask } from 'react-native-masked-text';
-import { saveCredentials } from '../services/storage';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+import Button from "../components/Button";
+import Input from "../components/Input";
+import { TextInputMask } from "react-native-masked-text";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RegisterScreen({ goTo }) {
-  const [nome, setNome] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [ddd, setDdd] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [nome, setNome] = useState("");
+  const [rg, setRg] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+  const [ddd, setDdd] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
-  // Validação segura da senha
   const validarSenha = (senha) => {
     if (!senha || senha.length < 8) return false;
     const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
     return regex.test(senha);
   };
 
-  // Verificação dos campos obrigatórios
-  const telefoneLimpo = telefone.replace(/\D/g, '');
+  const telefoneLimpo = telefone.replace(/\D/g, "");
   const camposValidos =
     nome.trim() &&
+    rg.trim() &&
     cpf.trim() &&
+    cep.trim() &&
+    numero.trim() &&
+    logradouro.trim() &&
+    bairro.trim() &&
+    cidade.trim() &&
+    uf.trim() &&
     ddd.trim().length === 2 &&
     telefoneLimpo.length >= 8 &&
     telefoneLimpo.length <= 9 &&
     email.trim() &&
     senha.trim() &&
-    validarSenha(senha);
+    validarSenha(senha) &&
+    confirmarSenha.trim() &&
+    senha === confirmarSenha;
 
-  const handleRegister = async () => {
+  const buscarEndereco = async () => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    if (cepLimpo.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        Alert.alert("CEP inválido", "Não foi possível encontrar o endereço.");
+        return;
+      }
+
+      setLogradouro(data.logradouro);
+      setBairro(data.bairro);
+      setCidade(data.localidade);
+      setUf(data.uf);
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível buscar o endereço.");
+    }
+  };
+
+  const handleSubmit = () => {
     if (!camposValidos) {
-      Alert.alert('Preencha todos os campos corretamente');
+      Alert.alert("Erro", "Preencha todos os campos corretamente.");
       return;
     }
 
-    const telefoneCompleto = `(${ddd}) ${telefone}`;
-    const dados = { nome, cpf, telefone: telefoneCompleto, email, senha };
+    if (senha !== confirmarSenha) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
 
-    await saveCredentials(email, senha);
-    console.log('Dados do usuário:', dados);
-    Alert.alert('Cadastro realizado!');
-    goTo('login');
+    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${uf}`;
+    const telefoneCompleto = `(${ddd}) ${telefone}`;
+
+    const dados = {
+      nome,
+      rg,
+      cpf,
+      endereco: enderecoCompleto,
+      telefone: telefoneCompleto,
+      email,
+      senha,
+    };
+
+    console.log("Dados enviados:", dados);
+    Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+    goTo("chooseRegister");
   };
 
   return (
@@ -55,20 +105,36 @@ export default function RegisterScreen({ goTo }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
+        <Text style={styles.asterisco}>* Campos obrigatórios</Text>
 
-        <Text style={styles.label}>CPF:</Text>
-        <TextInputMask
-          type={"cpf"}
-          value={cpf}
-          onChangeText={setCpf}
-          style={styles.input}
-          keyboardType="numeric"
-        />
+        <Input placeholder="Nome completo *" value={nome} onChangeText={setNome} />
+        <Input placeholder="RG *" value={rg} onChangeText={setRg} />
+        <Input placeholder="CPF *" value={cpf} onChangeText={setCpf} />
+
+        <View style={styles.row}>
+          <View style={styles.cepContainer}>
+            <Input
+              placeholder="CEP *"
+              value={cep}
+              onChangeText={setCep}
+              onBlur={buscarEndereco}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.numeroContainer}>
+            <Input placeholder="Número *" value={numero} onChangeText={setNumero} />
+          </View>
+        </View>
+
+        <Input placeholder="Logradouro *" value={logradouro} onChangeText={setLogradouro} />
+        <Input placeholder="Bairro *" value={bairro} onChangeText={setBairro} />
+        <Input placeholder="Cidade *" value={cidade} onChangeText={setCidade} />
+        <Input placeholder="Estado (UF) *" value={uf} onChangeText={setUf} />
 
         <View style={styles.row}>
           <View style={styles.dddContainer}>
-            <Text style={styles.label}>DDD:</Text>
+            <Text style={styles.label}>DDD: *</Text>
             <TextInputMask
               type={"custom"}
               options={{ mask: "99" }}
@@ -80,10 +146,14 @@ export default function RegisterScreen({ goTo }) {
           </View>
 
           <View style={styles.telefoneContainer}>
-            <Text style={styles.label}>Telefone:</Text>
+            <Text style={styles.label}>Telefone: *</Text>
             <TextInputMask
               type={"cel-phone"}
-              options={{ maskType: "BRL", withDDD: false }}
+              options={{
+                maskType: "BRL",
+                withDDD: false,
+                dddMask: "(99) ",
+              }}
               value={telefone}
               onChangeText={setTelefone}
               style={styles.input}
@@ -92,21 +162,16 @@ export default function RegisterScreen({ goTo }) {
           </View>
         </View>
 
+        <Input placeholder="Email *" value={email} onChangeText={setEmail} />
+        <Input placeholder="Senha *" value={senha} onChangeText={setSenha} secureTextEntry />
         <Input
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Input
-          placeholder="Senha"
-          value={senha}
-          onChangeText={setSenha}
+          placeholder="Confirmar senha *"
+          value={confirmarSenha}
+          onChangeText={setConfirmarSenha}
           secureTextEntry
         />
 
-        <Button title="Cadastrar" onPress={handleRegister} disabled={!camposValidos} />
+        <Button title="Cadastrar" onPress={handleSubmit} disabled={!camposValidos} />
         <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
       </ScrollView>
     </SafeAreaView>
@@ -114,10 +179,6 @@ export default function RegisterScreen({ goTo }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
   container: {
     padding: 20,
     backgroundColor: "#fff",
@@ -125,7 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   header: {
-    backgroundColor: "#ff9100ff", 
+    backgroundColor: "#ff9100ff",
     paddingVertical: 16,
     alignItems: "center",
     width: "100%",
@@ -134,6 +195,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 22,
     fontWeight: "bold",
+  },
+  asterisco: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 10,
   },
   label: {
     marginTop: 10,
@@ -147,15 +213,30 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
+  picker: {
+    height: 50,
+    width: "100%",
+    marginBottom: 20,
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 10,
+  },
+  cepContainer: {
+    flex: 1.2,
+  },
+  numeroContainer: {
+    flex: 1,
   },
   dddContainer: {
     flex: 0.7,
-    marginRight: 10,
   },
   telefoneContainer: {
     flex: 2,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
 });

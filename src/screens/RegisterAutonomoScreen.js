@@ -21,6 +21,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [servico, setServico] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
   const servicos = [
     "Pedreiro", "Eletricista", "Pintor", "Encanador", "Jardineiro", "Diarista",
@@ -55,6 +56,8 @@ export default function RegisterAutonomoScreen({ goTo }) {
     email.trim() &&
     senha.trim() &&
     validarSenha(senha) &&
+    confirmarSenha.trim() &&
+    senha === confirmarSenha
     servico.trim();
 
   const buscarEndereco = async () => {
@@ -83,6 +86,10 @@ export default function RegisterAutonomoScreen({ goTo }) {
     if (!camposValidos) {
       Alert.alert("Erro", "Preencha todos os campos corretamente.");
       return;
+    if (senha !== confirmarSenha) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+}  
     }
 
     const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${uf}`;
@@ -111,36 +118,36 @@ export default function RegisterAutonomoScreen({ goTo }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Input placeholder="Nome completo" value={nome} onChangeText={setNome} />
-        <Input placeholder="RG" value={rg} onChangeText={setRg} />
-        <Input placeholder="CPF" value={cpf} onChangeText={setCpf} />
+      <Text style={styles.asterisco}>* Campos obrigatórios</Text>
+
+        <Input placeholder="Nome completo *" value={nome} onChangeText={setNome} />
+        <Input placeholder="RG *" value={rg} onChangeText={setRg} />
+        <Input placeholder="CPF *" value={cpf} onChangeText={setCpf} />
 
         <View style={styles.row}>
           <View style={styles.cepContainer}>
-            <Text style={styles.label}>CEP:</Text>
-            <TextInputMask
-              type={"zip-code"}
+            <Input
+              placeholder="CEP *"
               value={cep}
               onChangeText={setCep}
               onBlur={buscarEndereco}
-              style={styles.input}
+              keyboardType="numeric"
             />
           </View>
 
           <View style={styles.numeroContainer}>
-            <Text style={styles.label}>Número:</Text>
-            <Input placeholder="Número" value={numero} onChangeText={setNumero} />
+            <Input placeholder="Número *" value={numero} onChangeText={setNumero} />
           </View>
         </View>
 
-        <Input placeholder="Logradouro" value={logradouro} onChangeText={setLogradouro} />
-        <Input placeholder="Bairro" value={bairro} onChangeText={setBairro} />
-        <Input placeholder="Cidade" value={cidade} onChangeText={setCidade} />
-        <Input placeholder="Estado (UF)" value={uf} onChangeText={setUf} />
+        <Input placeholder="Logradouro *" value={logradouro} onChangeText={setLogradouro} />
+        <Input placeholder="Bairro *" value={bairro} onChangeText={setBairro} />
+        <Input placeholder="Cidade *" value={cidade} onChangeText={setCidade} />
+        <Input placeholder="Estado (UF) *" value={uf} onChangeText={setUf} />
 
         <View style={styles.row}>
           <View style={styles.dddContainer}>
-            <Text style={styles.label}>DDD:</Text>
+            <Text style={styles.label}>DDD: *</Text>
             <TextInputMask
               type={"custom"}
               options={{ mask: "99" }}
@@ -152,7 +159,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
           </View>
 
           <View style={styles.telefoneContainer}>
-            <Text style={styles.label}>Telefone:</Text>
+            <Text style={styles.label}>Telefone: *</Text>
             <TextInputMask
               type={"cel-phone"}
               options={{
@@ -168,10 +175,11 @@ export default function RegisterAutonomoScreen({ goTo }) {
           </View>
         </View>
 
-        <Input placeholder="Email" value={email} onChangeText={setEmail} />
-        <Input placeholder="Senha" value={senha} onChangeText={setSenha} secureTextEntry />
+        <Input placeholder="Email *" value={email} onChangeText={setEmail} />
+        <Input placeholder="Senha *" value={senha} onChangeText={setSenha} secureTextEntry />
+        <Input placeholder="Confirmar senha *" value={confirmarSenha} onChangeText={setConfirmarSenha} secureTextEntry/>
 
-        <Text style={styles.label}>Serviço oferecido:</Text>
+        <Text style={styles.label}>Serviço oferecido: *</Text>
         <Picker
           selectedValue={servico}
           style={styles.picker}
@@ -207,6 +215,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 22,
     fontWeight: "bold",
+  },
+  asterisco: {
+  fontSize: 12,
+  color: "#666",
+  marginBottom: 10,
   },
   label: {
     marginTop: 10,
