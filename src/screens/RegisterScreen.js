@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import { TextInputMask } from "react-native-masked-text";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterScreen({ goTo }) {
   const [nome, setNome] = useState("");
@@ -69,7 +70,7 @@ export default function RegisterScreen({ goTo }) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!camposValidos) {
       Alert.alert("Erro", "Preencha todos os campos corretamente.");
       return;
@@ -89,13 +90,25 @@ export default function RegisterScreen({ goTo }) {
       cpf,
       endereco: enderecoCompleto,
       telefone: telefoneCompleto,
-      email,
+      email: email.toLowerCase(), // normaliza email
       senha,
     };
 
-    console.log("Dados enviados:", dados);
-    Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-    goTo("chooseRegister");
+    try {
+      // Busca lista existente
+      const usuariosExistentes = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
+      // Adiciona novo
+      usuariosExistentes.push(dados);
+      // Salva de volta
+      await AsyncStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
+
+      console.log("Usuário salvo:", dados);
+      Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+      goTo("chooseRegister");
+    } catch (error) {
+      console.error("Erro ao salvar usuário:", error);
+      Alert.alert("Erro", "Não foi possível salvar o cadastro.");
+    }
   };
 
   return (
@@ -212,11 +225,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
-  },
-  picker: {
-    height: 50,
-    width: "100%",
-    marginBottom: 20,
   },
   row: {
     flexDirection: "row",

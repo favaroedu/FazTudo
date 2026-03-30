@@ -3,19 +3,31 @@ import { View, Image, Alert, StyleSheet } from "react-native";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import logo from "../../assets/logo.png";
-import { getCredentials } from "../services/storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen({ goTo }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
   const handleLogin = async () => {
-    const { email: savedEmail, senha: savedSenha } = await getCredentials();
-    if (email === savedEmail && senha === savedSenha) {
-      Alert.alert("Login realizado!");
-      goTo("home");
-    } else {
-      Alert.alert("Email ou senha incorretos");
+    try {
+      const usuarios = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
+      const profissionais = JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
+      const todos = [...usuarios, ...profissionais];
+
+      const encontrado = todos.find(
+        u => u.email === email.toLowerCase() && u.senha === senha
+      );
+
+      if (encontrado) {
+        Alert.alert("Sucesso", "Login realizado com sucesso!");
+        goTo("home");
+      } else {
+        Alert.alert("Erro", "Email ou senha incorretos.");
+      }
+    } catch (error) {
+      console.error("Erro ao tentar login:", error);
+      Alert.alert("Erro", "Não foi possível realizar o login.");
     }
   };
 
