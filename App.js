@@ -5,6 +5,7 @@ import ChooseRegisterScreen from "./src/screens/ChooseRegisterScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import RegisterAutonomoScreen from "./src/screens/RegisterAutonomoScreen";
 import HomeScreen from "./src/screens/HomeScreen";
+import ForgotPassword from "./src/screens/ForgotPassword";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("login");
@@ -22,6 +23,9 @@ export default function App() {
       return <RegisterAutonomoScreen goTo={goTo} />;
     case "home":
       return <HomeScreen goTo={goTo} />;
+    case "forgotPassword":
+      return <ForgotPassword goTo={goTo} />;
+
     default:
       return null;
   }

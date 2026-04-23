@@ -1,7 +1,6 @@
 appId: host.exp.exponent
 ---
 # Cenário 1: Login
-
 - tapOn: "Email"
 - inputText: "edsoneduardo2@hotmail.com"
 - tapOn: "Senha"
@@ -13,7 +12,6 @@ appId: host.exp.exponent
 - tapOn: "Voltar"
 
 # Cenário 2: Botão "Cadastrar"
-
 - tapOn: "Cadastrar"
 - assertVisible: "Sou USUÁRIO"
 - assertVisible: "Sou Autônomo"
