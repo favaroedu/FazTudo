@@ -1,0 +1,13 @@
+appId: host.exp.exponent
+---
+# Cenário 1: Deve realizar login com sucesso
+- tapOn: "Email"
+- inputText: ${MAESTRO_USERNAME}
+- tapOn: "Senha"
+- inputText: ${MAESTRO_PASSWORD}
+- tapOn: "Entrar"
+- assertVisible: "Sucesso"
+- tapOn: "OK"
+- assertVisible: "Escolha um serviço..."
+- tapOn: "Voltar"
+
