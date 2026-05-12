@@ -1,0 +1,43 @@
+appId: host.exp.exponent
+---
+# Cenário 3: Deve realizar cadastro de usuário com sucesso
+- tapOn: "Cadastrar"
+- tapOn: "Sou USUÁRIO"
+- tapOn: "Nome completo *"
+- inputText: ${name}
+- tapOn: "RG *"
+- inputText: ${rg}
+- tapOn: "CPF *"
+- inputText: ${cpf}
+- tapOn: "CEP *"
+- inputText: 51030380
+- tapOn: "Número *"
+- inputText: 10
+- tapOn:
+    id: "0_resource_name_obfuscated"
+- scrollUntilVisible:
+    element: "Cadastrar"
+- tapOn: "DDD *"
+- inputText: 81
+- tapOn: "Telefone *"
+- inputText: 999999999
+- tapOn:
+    id: "0_resource_name_obfuscated"
+- assertVisible: "Email *"
+- tapOn: "Email *"
+- inputText: ${email}
+- tapOn:
+    id: "0_resource_name_obfuscated"
+- assertVisible: "Senha *"
+- tapOn: "Senha *"
+- inputText: ${password}
+- tapOn:
+    id: "0_resource_name_obfuscated"
+- assertVisible: "Confirmar Senha *"
+- tapOn: "Confirmar Senha *"
+- inputText: ${password}
+- tapOn:
+    id: "0_resource_name_obfuscated"
+- assertVisible: "Email *"
+- tapOn: "Cadastrar"
+- assertVisible: "Cadastro realizado com sucesso"

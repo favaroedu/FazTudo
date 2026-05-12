@@ -12,12 +12,10 @@ export default function ForgotPassword({ goTo }) {
     }
 
     try {
-      // Recupera usuários e profissionais do AsyncStorage
       const usuarios = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
       const profissionais = JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
       const todos = [...usuarios, ...profissionais];
 
-      // Verifica se o email existe
       const encontrado = todos.find(u => u.email === email.toLowerCase());
 
       if (encontrado) {
@@ -25,7 +23,7 @@ export default function ForgotPassword({ goTo }) {
           "Recuperação de senha",
           `Enviamos instruções para redefinir a senha do email ${email}.`
         );
-        goTo("login"); // volta para tela de login
+        goTo("login");
       } else {
         Alert.alert("Erro", "Não encontramos nenhuma conta com esse email.");
       }
@@ -38,6 +36,7 @@ export default function ForgotPassword({ goTo }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Recuperar senha</Text>
+
       <TextInput
         placeholder="Digite seu email"
         value={email}
@@ -46,7 +45,17 @@ export default function ForgotPassword({ goTo }) {
         autoCapitalize="none"
         style={styles.input}
       />
+
       <Button title="Enviar instruções" onPress={handleResetPassword} />
+
+      {/* 🔥 BOTÃO VOLTAR */}
+      <View style={styles.backButton}>
+        <Button
+          title="Voltar"
+          onPress={() => goTo("login")}
+          color="#666"
+        />
+      </View>
     </View>
   );
 }
@@ -70,5 +79,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 20,
+  },
+  backButton: {
+    marginTop: 10,
   },
 });

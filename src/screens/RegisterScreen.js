@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { TextInputMask } from "react-native-masked-text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -10,35 +9,123 @@ export default function RegisterScreen({ goTo }) {
   const [nome, setNome] = useState("");
   const [rg, setRg] = useState("");
   const [cpf, setCpf] = useState("");
+
   const [cep, setCep] = useState("");
   const [numero, setNumero] = useState("");
+  const [referencia, setReferencia] = useState("");
+
   const [logradouro, setLogradouro] = useState("");
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
+  const [estadoExtenso, setEstadoExtenso] = useState("");
+
   const [ddd, setDdd] = useState("");
   const [telefone, setTelefone] = useState("");
+
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
+  const [enderecoEncontrado, setEnderecoEncontrado] = useState(false);
+  const [ultimoCepBuscado, setUltimoCepBuscado] = useState("");
+
+  const estados = {
+    AC: "Acre",
+    AL: "Alagoas",
+    AP: "Amapá",
+    AM: "Amazonas",
+    BA: "Bahia",
+    CE: "Ceará",
+    DF: "Distrito Federal",
+    ES: "Espírito Santo",
+    GO: "Goiás",
+    MA: "Maranhão",
+    MT: "Mato Grosso",
+    MS: "Mato Grosso do Sul",
+    MG: "Minas Gerais",
+    PA: "Pará",
+    PB: "Paraíba",
+    PR: "Paraná",
+    PE: "Pernambuco",
+    PI: "Piauí",
+    RJ: "Rio de Janeiro",
+    RN: "Rio Grande do Norte",
+    RS: "Rio Grande do Sul",
+    RO: "Rondônia",
+    RR: "Roraima",
+    SC: "Santa Catarina",
+    SP: "São Paulo",
+    SE: "Sergipe",
+    TO: "Tocantins",
+  };
+
+  const limparEndereco = () => {
+    setEnderecoEncontrado(false);
+    setLogradouro("");
+    setBairro("");
+    setCidade("");
+    setUf("");
+    setEstadoExtenso("");
+  };
+
+  const buscarEndereco = async (cepLimpo) => {
+    try {
+      const response = await fetch(
+        `https://viacep.com.br/ws/${cepLimpo}/json/`
+      );
+
+      const data = await response.json();
+
+      if (data.erro) {
+        limparEndereco();
+        Alert.alert("CEP inválido");
+        return;
+      }
+
+      setLogradouro(data.logradouro || "");
+      setBairro(data.bairro || "");
+      setCidade(data.localidade || "");
+      setUf(data.uf || "");
+      setEstadoExtenso(estados[data.uf] || data.uf);
+
+      setEnderecoEncontrado(true);
+    } catch (error) {
+      console.log("Erro ViaCEP:", error);
+      limparEndereco();
+      Alert.alert("Erro", "Falha ao buscar CEP.");
+    }
+  };
+
+  useEffect(() => {
+    const cepLimpo = cep.replace(/\D/g, "");
+
+    if (cepLimpo.length !== 8) {
+      limparEndereco();
+      setUltimoCepBuscado("");
+      return;
+    }
+
+    if (cepLimpo === ultimoCepBuscado) return;
+
+    setUltimoCepBuscado(cepLimpo);
+    buscarEndereco(cepLimpo);
+  }, [cep]);
+
   const validarSenha = (senha) => {
-    if (!senha || senha.length < 8) return false;
     const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
     return regex.test(senha);
   };
 
   const telefoneLimpo = telefone.replace(/\D/g, "");
+
   const camposValidos =
     nome.trim() &&
     rg.trim() &&
     cpf.trim() &&
-    cep.trim() &&
+    cep.replace(/\D/g, "").length === 8 &&
+    enderecoEncontrado &&
     numero.trim() &&
-    logradouro.trim() &&
-    bairro.trim() &&
-    cidade.trim() &&
-    uf.trim() &&
     ddd.trim().length === 2 &&
     telefoneLimpo.length >= 8 &&
     telefoneLimpo.length <= 9 &&
@@ -48,65 +135,40 @@ export default function RegisterScreen({ goTo }) {
     confirmarSenha.trim() &&
     senha === confirmarSenha;
 
-  const buscarEndereco = async () => {
-    const cepLimpo = cep.replace(/\D/g, "");
-    if (cepLimpo.length !== 8) return;
-
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-      const data = await response.json();
-
-      if (data.erro) {
-        Alert.alert("CEP inválido", "Não foi possível encontrar o endereço.");
-        return;
-      }
-
-      setLogradouro(data.logradouro);
-      setBairro(data.bairro);
-      setCidade(data.localidade);
-      setUf(data.uf);
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível buscar o endereço.");
-    }
-  };
-
   const handleSubmit = async () => {
     if (!camposValidos) {
       Alert.alert("Erro", "Preencha todos os campos corretamente.");
       return;
     }
 
-    if (senha !== confirmarSenha) {
-      Alert.alert("Erro", "As senhas não coincidem.");
-      return;
-    }
-
-    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${uf}`;
-    const telefoneCompleto = `(${ddd}) ${telefone}`;
+    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
+    const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
 
     const dados = {
       nome,
       rg,
       cpf,
       endereco: enderecoCompleto,
+      referencia,
       telefone: telefoneCompleto,
-      email: email.toLowerCase(), // normaliza email
+      email: email.toLowerCase(),
       senha,
     };
 
     try {
-      // Busca lista existente
-      const usuariosExistentes = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
-      // Adiciona novo
-      usuariosExistentes.push(dados);
-      // Salva de volta
-      await AsyncStorage.setItem("usuarios", JSON.stringify(usuariosExistentes));
+      const data = await AsyncStorage.getItem("usuarios");
+      let usuariosExistentes = data ? JSON.parse(data) : [];
 
-      console.log("Usuário salvo:", dados);
+      usuariosExistentes.push(dados);
+
+      await AsyncStorage.setItem(
+        "usuarios",
+        JSON.stringify(usuariosExistentes)
+      );
+
       Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
       goTo("chooseRegister");
     } catch (error) {
-      console.error("Erro ao salvar usuário:", error);
       Alert.alert("Erro", "Não foi possível salvar o cadastro.");
     }
   };
@@ -124,59 +186,83 @@ export default function RegisterScreen({ goTo }) {
         <Input placeholder="RG *" value={rg} onChangeText={setRg} />
         <Input placeholder="CPF *" value={cpf} onChangeText={setCpf} />
 
-        <View style={styles.row}>
-          <View style={styles.cepContainer}>
+        <Input
+          placeholder="CEP *"
+          value={cep}
+          onChangeText={setCep}
+          keyboardType="numeric"
+        />
+
+        {enderecoEncontrado && (
+          <>
+            <View style={styles.row}>
+              <View style={styles.flex2}>
+                <Input
+                  placeholder="Logradouro *"
+                  value={logradouro}
+                  onChangeText={setLogradouro}
+                />
+              </View>
+
+              <View style={styles.flex1}>
+                <Input
+                  placeholder="Número *"
+                  value={numero}
+                  onChangeText={setNumero}
+                />
+              </View>
+            </View>
+
             <Input
-              placeholder="CEP *"
-              value={cep}
-              onChangeText={setCep}
-              onBlur={buscarEndereco}
-              keyboardType="numeric"
+              placeholder="Referência (opcional)"
+              value={referencia}
+              onChangeText={setReferencia}
             />
-          </View>
 
-          <View style={styles.numeroContainer}>
-            <Input placeholder="Número *" value={numero} onChangeText={setNumero} />
-          </View>
-        </View>
+            <View style={styles.row}>
+              <View style={styles.flex1}>
+                <Input
+                  placeholder="Bairro *"
+                  value={bairro}
+                  onChangeText={setBairro}
+                />
+              </View>
 
-        <Input placeholder="Logradouro *" value={logradouro} onChangeText={setLogradouro} />
-        <Input placeholder="Bairro *" value={bairro} onChangeText={setBairro} />
-        <Input placeholder="Cidade *" value={cidade} onChangeText={setCidade} />
-        <Input placeholder="Estado (UF) *" value={uf} onChangeText={setUf} />
+              <View style={styles.flex1}>
+                <Input
+                  placeholder="Cidade *"
+                  value={cidade}
+                  onChangeText={setCidade}
+                />
+              </View>
+            </View>
 
-        <View style={styles.row}>
-          <View style={styles.dddContainer}>
-            <Text style={styles.label}>DDD: *</Text>
-            <TextInputMask
-              type={"custom"}
-              options={{ mask: "99" }}
-              value={ddd}
-              onChangeText={setDdd}
-              style={styles.input}
-              keyboardType="numeric"
+            <Input
+              placeholder="Estado"
+              value={estadoExtenso}
+              editable={false}
             />
-          </View>
+          </>
+        )}
 
-          <View style={styles.telefoneContainer}>
-            <Text style={styles.label}>Telefone: *</Text>
-            <TextInputMask
-              type={"cel-phone"}
-              options={{
-                maskType: "BRL",
-                withDDD: false,
-                dddMask: "(99) ",
-              }}
-              value={telefone}
-              onChangeText={setTelefone}
-              style={styles.input}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
+        <Input placeholder="DDD *" value={ddd} onChangeText={setDdd} keyboardType="numeric" />
+
+        <Input
+          placeholder="Telefone *"
+          value={telefone}
+          onChangeText={setTelefone}
+          keyboardType="phone-pad"
+        />
 
         <Input placeholder="Email *" value={email} onChangeText={setEmail} />
-        <Input placeholder="Senha *" value={senha} onChangeText={setSenha} secureTextEntry />
+
+        <Input
+          placeholder="Senha *"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
+        />
+
         <Input
           placeholder="Confirmar senha *"
           value={confirmarSenha}
@@ -185,66 +271,44 @@ export default function RegisterScreen({ goTo }) {
         />
 
         <Button title="Cadastrar" onPress={handleSubmit} disabled={!camposValidos} />
-        <Button title="Voltar" onPress={() => goTo("chooseRegister")} type="secondary" />
+
+        <Button
+          title="Voltar"
+          onPress={() => goTo("chooseRegister")}
+          type="secondary"
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#fff",
-    flexGrow: 1,
-    justifyContent: "center",
+  safeArea: {
+    flex: 1,
   },
   header: {
-    backgroundColor: "#ff9100ff",
-    paddingVertical: 16,
-    alignItems: "center",
-    width: "100%",
+    padding: 16,
+    backgroundColor: "#fff",
   },
   headerText: {
-    color: "#fff",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
   },
+  container: {
+    padding: 16,
+  },
   asterisco: {
-    fontSize: 12,
-    color: "#666",
     marginBottom: 10,
-  },
-  label: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+    color: "red",
   },
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: 10,
   },
-  cepContainer: {
-    flex: 1.2,
-  },
-  numeroContainer: {
+  flex1: {
     flex: 1,
   },
-  dddContainer: {
-    flex: 0.7,
-  },
-  telefoneContainer: {
+  flex2: {
     flex: 2,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
   },
 });
