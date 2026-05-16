@@ -1,61 +1,94 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Alert,
+  StyleSheet,
+  Image,
+} from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import Input from "../components/Input";
+import Button from "../components/Button";
+
+import logo from "../../assets/logo.png";
 
 export default function ForgotPassword({ goTo }) {
   const [email, setEmail] = useState("");
 
   const handleResetPassword = async () => {
-    if (!email) {
-      Alert.alert("Erro", "Por favor, insira seu email.");
+    if (!email.trim()) {
+      Alert.alert("Erro", "Digite seu email.");
       return;
     }
 
     try {
-      const usuarios = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
-      const profissionais = JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
+      const usuarios =
+        JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
+
+      const profissionais =
+        JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
+
       const todos = [...usuarios, ...profissionais];
 
-      const encontrado = todos.find(u => u.email === email.toLowerCase());
+      const encontrado = todos.find(
+        (u) => u.email === email.trim().toLowerCase()
+      );
 
       if (encontrado) {
         Alert.alert(
           "Recuperação de senha",
-          `Enviamos instruções para redefinir a senha do email ${email}.`
+          `Instruções de recuperação enviadas para ${email.trim()}.`
         );
+
         goTo("login");
       } else {
-        Alert.alert("Erro", "Não encontramos nenhuma conta com esse email.");
+        Alert.alert(
+          "Erro",
+          "Não encontramos nenhuma conta com esse email."
+        );
       }
     } catch (error) {
-      console.error("Erro ao tentar recuperar senha:", error);
-      Alert.alert("Erro", "Não foi possível processar a recuperação de senha.");
+      console.error("Erro ao recuperar senha:", error);
+
+      Alert.alert(
+        "Erro",
+        "Não foi possível processar a recuperação."
+      );
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Recuperar senha</Text>
+      <Image source={logo} style={styles.logo} />
 
-      <TextInput
-        placeholder="Digite seu email"
+      <Text style={styles.title}>
+        Recuperar senha
+      </Text>
+
+      <Text style={styles.subtitle}>
+        Digite o email da sua conta para continuar.
+      </Text>
+
+      <Input
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
-        style={styles.input}
       />
 
-      <Button title="Enviar instruções" onPress={handleResetPassword} />
+      <Button
+        title="Enviar instruções"
+        onPress={handleResetPassword}
+      />
 
-      {/* 🔥 BOTÃO VOLTAR */}
-      <View style={styles.backButton}>
-        <Button
-          title="Voltar"
-          onPress={() => goTo("login")}
-          color="#666"
-        />
-      </View>
+      <Button
+        title="Voltar para login"
+        onPress={() => goTo("login")}
+        type="secondary"
+      />
     </View>
   );
 }
@@ -67,20 +100,27 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
+
+  logo: {
+    width: 250,
+    height: 250,
+    resizeMode: "contain",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+
   title: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 20,
     textAlign: "center",
+    marginBottom: 10,
+    color: "#000",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
-  },
-  backButton: {
-    marginTop: 10,
+
+  subtitle: {
+    textAlign: "center",
+    color: "#666",
+    marginBottom: 25,
+    fontSize: 14,
   },
 });

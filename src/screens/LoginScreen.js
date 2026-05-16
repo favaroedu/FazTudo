@@ -1,39 +1,122 @@
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
+
 import React, { useState } from "react";
-import { View, Image, Alert, StyleSheet, TouchableOpacity, Text } from "react-native";
+
+import {
+  View,
+  Image,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+} from "react-native";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import Input from "../components/Input";
 import Button from "../components/Button";
+
 import logo from "../../assets/logo.png";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import googleLogo from "../../assets/google.png";
+
+import { auth } from "../services/firebaseConfig";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ goTo }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
+  const [request, response, promptAsync] =
+  Google.useAuthRequest({
+    androidClientId:
+      "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
+
+    expoClientId:
+      "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
+  });
+
   const handleLogin = async () => {
     try {
-      const usuarios = JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
-      const profissionais = JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
+      const usuarios =
+        JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
+
+      const profissionais =
+        JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
+
       const todos = [...usuarios, ...profissionais];
 
       const encontrado = todos.find(
-        u => u.email === email.toLowerCase() && u.senha === senha
+        (u) =>
+          u.email === email.toLowerCase() &&
+          u.senha === senha
       );
 
       if (encontrado) {
-        Alert.alert("Sucesso", "Login realizado com sucesso!");
+        Alert.alert(
+          "Sucesso",
+          "Login realizado com sucesso!"
+        );
+
         goTo("home");
       } else {
-        Alert.alert("Erro", "Email ou senha incorretos.");
+        Alert.alert(
+          "Erro",
+          "Email ou senha incorretos."
+        );
       }
     } catch (error) {
       console.error("Erro ao tentar login:", error);
-      Alert.alert("Erro", "Não foi possível realizar o login.");
+
+      Alert.alert(
+        "Erro",
+        "Não foi possível realizar o login."
+      );
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert("Google Login", "Fluxo de login com Google ainda não implementado.");
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await promptAsync();
+
+      if (result?.type === "success") {
+        const { authentication } = result;
+
+        const credential =
+          GoogleAuthProvider.credential(
+            authentication.idToken,
+            authentication.accessToken
+          );
+
+        const userCredential =
+          await signInWithCredential(
+            auth,
+            credential
+          );
+
+        const user = userCredential.user;
+
+        Alert.alert(
+          "Sucesso",
+          `Bem-vindo ${user.displayName}`
+        );
+
+        goTo("home");
+      }
+    } catch (error) {
+      console.error(error);
+
+      Alert.alert(
+        "Erro",
+        "Não foi possível entrar com Google."
+      );
+    }
   };
 
   return (
@@ -47,14 +130,15 @@ export default function LoginScreen({ goTo }) {
         keyboardType="email-address"
         autoCapitalize="none"
       />
+
       <TouchableOpacity
         onPress={() => goTo("forgotPassword")}
         style={styles.forgotPasswordContainer}
       >
-        <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
+        <Text style={styles.forgotPassword}>
+          Esqueceu sua senha?
+        </Text>
       </TouchableOpacity>
-
-
 
       <Input
         placeholder="Senha"
@@ -63,7 +147,11 @@ export default function LoginScreen({ goTo }) {
         secureTextEntry
       />
 
-      <Button title="Entrar" onPress={handleLogin} />
+      <Button
+        title="Entrar"
+        onPress={handleLogin}
+      />
+
       <Button
         title="Cadastrar"
         onPress={() => goTo("chooseRegister")}
@@ -73,15 +161,27 @@ export default function LoginScreen({ goTo }) {
       {/* Linha divisória */}
       <View style={styles.dividerContainer}>
         <View style={styles.line} />
-        <Text style={styles.dividerText}>ou</Text>
+
+        <Text style={styles.dividerText}>
+          ou
+        </Text>
+
         <View style={styles.line} />
       </View>
 
+      {/* Botão Google */}
+      <TouchableOpacity
+        style={styles.googleButton}
+        onPress={handleGoogleLogin}
+      >
+        <Image
+          source={googleLogo}
+          style={styles.googleLogo}
+        />
 
-      {/* Botão Google com logo */}
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-        <Image source={googleLogo} style={styles.googleLogo} />
-        <Text style={styles.googleText}>Entrar com Google</Text>
+        <Text style={styles.googleText}>
+          Entrar com Google
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -94,6 +194,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
   },
+
   logo: {
     width: 350,
     height: 350,
@@ -101,30 +202,34 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 30,
   },
+
   forgotPasswordContainer: {
     alignItems: "flex-end",
     marginBottom: 10,
   },
+
   forgotPassword: {
     color: "blue",
     fontSize: 14,
   },
+
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 20,
   },
+
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: "#aaa", // cor da linha cinza
+    backgroundColor: "#aaa",
   },
+
   dividerText: {
     marginHorizontal: 10,
     color: "#aaa",
     fontSize: 14,
   },
-
 
   googleButton: {
     flexDirection: "row",
@@ -132,17 +237,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 25,   // deixa arredondado
+    borderRadius: 25,
     paddingVertical: 8,
     paddingHorizontal: 15,
-    alignSelf: "center", // centraliza no layout
+    alignSelf: "center",
   },
+
   googleLogo: {
     width: 18,
     height: 18,
     marginRight: 8,
     resizeMode: "contain",
   },
+
   googleText: {
     fontSize: 14,
     color: "#000",

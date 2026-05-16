@@ -29,6 +29,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "jsEngine": "jsc"
+    "jsEngine": "jsc",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
