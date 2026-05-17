@@ -6,7 +6,7 @@ import {
   signInWithCredential,
 } from "firebase/auth";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   View,
@@ -35,12 +35,31 @@ export default function LoginScreen({ goTo }) {
 
   const [request, response, promptAsync] =
   Google.useAuthRequest({
-    androidClientId:
-      "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
-
-    expoClientId:
-      "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
+    androidClientId: "1013595704590-hhvgtbd9upjm4ce5kddju76eo8nck4d4.apps.googleusercontent.com",
+    webClientId: "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
   });
+
+  useEffect(() => {
+    if (response?.type !== "success") return;
+
+    const { authentication } = response;
+    if (!authentication) return;
+
+    const credential = GoogleAuthProvider.credential(
+      authentication.idToken,
+      authentication.accessToken
+    );
+
+    signInWithCredential(auth, credential)
+      .then((userCredential) => {
+        Alert.alert("Sucesso", `Bem-vindo ${userCredential.user.displayName}`);
+        goTo("home");
+      })
+      .catch((error) => {
+        console.error(error);
+        Alert.alert("Erro", "Não foi possível entrar com Google.");
+      });
+  }, [response]);
 
   const handleLogin = async () => {
     try {
@@ -81,42 +100,8 @@ export default function LoginScreen({ goTo }) {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await promptAsync();
-
-      if (result?.type === "success") {
-        const { authentication } = result;
-
-        const credential =
-          GoogleAuthProvider.credential(
-            authentication.idToken,
-            authentication.accessToken
-          );
-
-        const userCredential =
-          await signInWithCredential(
-            auth,
-            credential
-          );
-
-        const user = userCredential.user;
-
-        Alert.alert(
-          "Sucesso",
-          `Bem-vindo ${user.displayName}`
-        );
-
-        goTo("home");
-      }
-    } catch (error) {
-      console.error(error);
-
-      Alert.alert(
-        "Erro",
-        "Não foi possível entrar com Google."
-      );
-    }
+  const handleGoogleLogin = () => {
+    promptAsync();
   };
 
   return (
