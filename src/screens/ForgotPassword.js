@@ -7,7 +7,8 @@ import {
   Image,
 } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../services/firebaseConfig";
 
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -18,44 +19,41 @@ export default function ForgotPassword({ goTo }) {
   const [email, setEmail] = useState("");
 
   const handleResetPassword = async () => {
-    if (!email.trim()) {
+    const emailFormatado = email.trim().toLowerCase();
+
+    if (!emailFormatado) {
       Alert.alert("Erro", "Digite seu email.");
       return;
     }
 
     try {
-      const usuarios =
-        JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
-
-      const profissionais =
-        JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
-
-      const todos = [...usuarios, ...profissionais];
-
-      const encontrado = todos.find(
-        (u) => u.email === email.trim().toLowerCase()
-      );
-
-      if (encontrado) {
-        Alert.alert(
-          "Recuperação de senha",
-          `Instruções de recuperação enviadas para ${email.trim()}.`
-        );
-
-        goTo("login");
-      } else {
-        Alert.alert(
-          "Erro",
-          "Não encontramos nenhuma conta com esse email."
-        );
-      }
-    } catch (error) {
-      console.error("Erro ao recuperar senha:", error);
+      await sendPasswordResetEmail(auth, emailFormatado);
 
       Alert.alert(
-        "Erro",
-        "Não foi possível processar a recuperação."
+        "Email enviado",
+        `As instruções de recuperação foram enviadas para ${emailFormatado}.`
       );
+
+      goTo("login");
+    } catch (error) {
+      console.log("Erro Firebase:", error);
+
+      let mensagem = "Não foi possível enviar o email.";
+
+      if (error.code === "auth/user-not-found") {
+        mensagem = "Nenhuma conta encontrada com esse email.";
+      }
+
+      if (error.code === "auth/invalid-email") {
+        mensagem = "Email inválido.";
+      }
+
+      if (error.code === "auth/too-many-requests") {
+        mensagem =
+          "Muitas tentativas. Tente novamente mais tarde.";
+      }
+
+      Alert.alert("Erro", mensagem);
     }
   };
 

@@ -79,7 +79,7 @@ export default function RegisterScreen({ goTo }) {
 
       if (data.erro) {
         limparEndereco();
-        Alert.alert("CEP inválido");
+        Alert.alert("CEP inválido", "Não encontramos esse CEP.");
         return;
       }
 
@@ -176,107 +176,181 @@ export default function RegisterScreen({ goTo }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Cadastro de Usuário</Text>
+        <Text style={styles.headerTitle}>Cadastro de Usuário</Text>
+        <Text style={styles.headerSubtitle}>
+          Preencha seus dados para criar sua conta no FazTudo.
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.asterisco}>* Campos obrigatórios</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.requiredText}>* Campos obrigatórios</Text>
 
-        <Input placeholder="Nome completo *" value={nome} onChangeText={setNome} />
-        <Input placeholder="RG *" value={rg} onChangeText={setRg} />
-        <Input placeholder="CPF *" value={cpf} onChangeText={setCpf} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dados pessoais</Text>
 
-        <Input
-          placeholder="CEP *"
-          value={cep}
-          onChangeText={setCep}
-          keyboardType="numeric"
-        />
+          <Input
+            placeholder="Nome completo *"
+            value={nome}
+            onChangeText={setNome}
+          />
 
-        {enderecoEncontrado && (
-          <>
-            <View style={styles.row}>
-              <View style={styles.flex2}>
-                <Input
-                  placeholder="Logradouro *"
-                  value={logradouro}
-                  onChangeText={setLogradouro}
-                />
+          <Input placeholder="RG *" value={rg} onChangeText={setRg} />
+
+          <Input
+            placeholder="CPF *"
+            value={cpf}
+            onChangeText={setCpf}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Endereço</Text>
+
+          <Input
+            placeholder="CEP *"
+            value={cep}
+            onChangeText={setCep}
+            keyboardType="numeric"
+          />
+
+          {!enderecoEncontrado && cep.replace(/\D/g, "").length > 0 && (
+            <Text style={styles.helperText}>
+              Digite os 8 números do CEP para buscarmos seu endereço.
+            </Text>
+          )}
+
+          {enderecoEncontrado && (
+            <>
+              <Text style={styles.successText}>Endereço encontrado ✓</Text>
+
+              <View style={styles.row}>
+                <View style={styles.flex2}>
+                  <Input
+                    placeholder="Logradouro *"
+                    value={logradouro}
+                    onChangeText={setLogradouro}
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Número *"
+                    value={numero}
+                    onChangeText={setNumero}
+                  />
+                </View>
               </View>
 
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Número *"
-                  value={numero}
-                  onChangeText={setNumero}
-                />
+              <Input
+                placeholder="Referência (opcional)"
+                value={referencia}
+                onChangeText={setReferencia}
+              />
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Bairro *"
+                    value={bairro}
+                    onChangeText={setBairro}
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Cidade *"
+                    value={cidade}
+                    onChangeText={setCidade}
+                  />
+                </View>
               </View>
+
+              <Input
+                placeholder="Estado"
+                value={estadoExtenso}
+                editable={false}
+              />
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contato</Text>
+
+          <View style={styles.row}>
+            <View style={styles.dddBox}>
+              <Input
+                placeholder="DDD *"
+                value={ddd}
+                onChangeText={setDdd}
+                keyboardType="numeric"
+              />
             </View>
 
-            <Input
-              placeholder="Referência (opcional)"
-              value={referencia}
-              onChangeText={setReferencia}
-            />
-
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Bairro *"
-                  value={bairro}
-                  onChangeText={setBairro}
-                />
-              </View>
-
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Cidade *"
-                  value={cidade}
-                  onChangeText={setCidade}
-                />
-              </View>
+            <View style={styles.phoneBox}>
+              <Input
+                placeholder="Telefone *"
+                value={telefone}
+                onChangeText={setTelefone}
+                keyboardType="phone-pad"
+              />
             </View>
+          </View>
 
-            <Input
-              placeholder="Estado"
-              value={estadoExtenso}
-              editable={false}
-            />
-          </>
-        )}
+          <Input
+            placeholder="Email *"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
 
-        <Input placeholder="DDD *" value={ddd} onChangeText={setDdd} keyboardType="numeric" />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Senha</Text>
 
-        <Input
-          placeholder="Telefone *"
-          value={telefone}
-          onChangeText={setTelefone}
-          keyboardType="phone-pad"
-        />
+          <Input
+            placeholder="Senha *"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry
+          />
 
-        <Input placeholder="Email *" value={email} onChangeText={setEmail} />
+          <Text style={styles.helperText}>
+            A senha deve ter no mínimo 8 caracteres, 1 número e 1 caractere
+            especial.
+          </Text>
 
-        <Input
-          placeholder="Senha *"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-        />
+          <Input
+            placeholder="Confirmar senha *"
+            value={confirmarSenha}
+            onChangeText={setConfirmarSenha}
+            secureTextEntry
+          />
 
-        <Input
-          placeholder="Confirmar senha *"
-          value={confirmarSenha}
-          onChangeText={setConfirmarSenha}
-          secureTextEntry
-        />
+          {confirmarSenha.length > 0 && senha !== confirmarSenha && (
+            <Text style={styles.errorText}>As senhas não coincidem.</Text>
+          )}
+        </View>
 
-        <Button title="Cadastrar" onPress={handleSubmit} disabled={!camposValidos} />
+        <View style={styles.actions}>
+          <Button
+            title="Criar minha conta"
+            onPress={handleSubmit}
+            disabled={!camposValidos}
+          />
 
-        <Button
-          title="Voltar"
-          onPress={() => goTo("chooseRegister")}
-          type="secondary"
-        />
+          <Button
+            title="Voltar"
+            onPress={() => goTo("chooseRegister")}
+            type="secondary"
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -285,30 +359,98 @@ export default function RegisterScreen({ goTo }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  header: {
-    padding: 16,
     backgroundColor: "#fff",
   },
-  headerText: {
-    fontSize: 20,
-    fontWeight: "bold",
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f1f1",
   },
+
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 4,
+  },
+
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+
   container: {
-    padding: 16,
+    padding: 22,
+    paddingBottom: 35,
   },
-  asterisco: {
+
+  requiredText: {
+    color: "#ff8c1a",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 14,
+  },
+
+  section: {
+    marginBottom: 22,
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 12,
+  },
+
+  helperText: {
+    color: "#777",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: -4,
     marginBottom: 10,
-    color: "red",
   },
+
+  successText: {
+    color: "#198754",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+
+  errorText: {
+    color: "#d93025",
+    fontSize: 12,
+    marginTop: -4,
+    marginBottom: 8,
+  },
+
   row: {
     flexDirection: "row",
     gap: 10,
   },
+
   flex1: {
     flex: 1,
   },
+
   flex2: {
     flex: 2,
+  },
+
+  dddBox: {
+    flex: 0.35,
+  },
+
+  phoneBox: {
+    flex: 1,
+  },
+
+  actions: {
+    marginTop: 6,
   },
 });

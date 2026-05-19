@@ -13,6 +13,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
   const [cep, setCep] = useState("");
   const [numero, setNumero] = useState("");
+  const [referencia, setReferencia] = useState("");
 
   const [logradouro, setLogradouro] = useState("");
   const [bairro, setBairro] = useState("");
@@ -62,6 +63,29 @@ export default function RegisterAutonomoScreen({ goTo }) {
     TO: "Tocantins",
   };
 
+  const servicos = [
+    "Construção",
+    "Reformas",
+    "Pintura",
+    "Elétrica",
+    "Hidráulica",
+    "Marcenaria",
+    "Vidraçaria",
+    "Gesso e Drywall",
+    "Climatização",
+    "Jardinagem",
+    "Limpeza residencial",
+    "Montagem de móveis",
+    "Serralheria",
+    "Dedetização",
+    "Segurança eletrônica",
+    "Energia solar",
+    "Piscinas",
+    "Informática",
+    "Internet e Redes",
+    "Instalações",
+  ].sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+
   const limparEndereco = () => {
     setEnderecoEncontrado(false);
     setLogradouro("");
@@ -81,7 +105,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
       if (data.erro) {
         limparEndereco();
-        Alert.alert("CEP inválido");
+        Alert.alert("CEP inválido", "Não encontramos esse CEP.");
         return;
       }
 
@@ -99,7 +123,6 @@ export default function RegisterAutonomoScreen({ goTo }) {
     }
   };
 
-  // 🔎 CEP automático seguro
   useEffect(() => {
     const cepLimpo = cep.replace(/\D/g, "");
 
@@ -126,6 +149,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
     nome.trim() &&
     rg.trim() &&
     cpf.trim() &&
+    servico.trim() &&
     cep.replace(/\D/g, "").length === 8 &&
     enderecoEncontrado &&
     numero.trim() &&
@@ -136,8 +160,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
     senha.trim() &&
     validarSenha(senha) &&
     confirmarSenha.trim() &&
-    senha === confirmarSenha &&
-    servico.trim();
+    senha === confirmarSenha;
 
   const handleSubmit = async () => {
     if (!camposValidos) {
@@ -152,11 +175,12 @@ export default function RegisterAutonomoScreen({ goTo }) {
       nome,
       rg,
       cpf,
+      servico,
       endereco: enderecoCompleto,
+      referencia,
       telefone: telefoneCompleto,
       email: email.toLowerCase(),
       senha,
-      servico,
     };
 
     try {
@@ -180,115 +204,316 @@ export default function RegisterAutonomoScreen({ goTo }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Cadastro de Profissional</Text>
+        <Text style={styles.headerTitle}>Cadastro de Profissional</Text>
+        <Text style={styles.headerSubtitle}>
+          Informe seus dados e escolha sua área de atuação.
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.asterisco}>* Campos obrigatórios</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.requiredText}>* Campos obrigatórios</Text>
 
-        <Input placeholder="Nome *" value={nome} onChangeText={setNome} />
-        <Input placeholder="RG *" value={rg} onChangeText={setRg} />
-        <Input placeholder="CPF *" value={cpf} onChangeText={setCpf} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dados pessoais</Text>
 
-        <Input
-          placeholder="CEP *"
-          value={cep}
-          onChangeText={setCep}
-          keyboardType="numeric"
-        />
+          <Input
+            placeholder="Nome completo *"
+            value={nome}
+            onChangeText={setNome}
+          />
 
-        {enderecoEncontrado && (
-          <>
-            <View style={styles.row}>
-              <View style={styles.flex2}>
-                <Input
-                  placeholder="Logradouro *"
-                  value={logradouro}
-                  onChangeText={setLogradouro}
-                />
+          <Input placeholder="RG *" value={rg} onChangeText={setRg} />
+
+          <Input
+            placeholder="CPF *"
+            value={cpf}
+            onChangeText={setCpf}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Área de atuação</Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={servico}
+              onValueChange={setServico}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecione sua área de serviço *" value="" />
+              {servicos.map((item) => (
+                <Picker.Item key={item} label={item} value={item} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={styles.helperText}>
+            Escolha a categoria principal do serviço que você oferece.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Endereço</Text>
+
+          <Input
+            placeholder="CEP *"
+            value={cep}
+            onChangeText={setCep}
+            keyboardType="numeric"
+          />
+
+          {!enderecoEncontrado && cep.replace(/\D/g, "").length > 0 && (
+            <Text style={styles.helperText}>
+              Digite os 8 números do CEP para buscarmos seu endereço.
+            </Text>
+          )}
+
+          {enderecoEncontrado && (
+            <>
+              <Text style={styles.successText}>Endereço encontrado ✓</Text>
+
+              <View style={styles.row}>
+                <View style={styles.flex2}>
+                  <Input
+                    placeholder="Logradouro *"
+                    value={logradouro}
+                    onChangeText={setLogradouro}
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Número *"
+                    value={numero}
+                    onChangeText={setNumero}
+                  />
+                </View>
               </View>
 
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Número *"
-                  value={numero}
-                  onChangeText={setNumero}
-                />
+              <Input
+                placeholder="Referência (opcional)"
+                value={referencia}
+                onChangeText={setReferencia}
+              />
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Bairro *"
+                    value={bairro}
+                    onChangeText={setBairro}
+                  />
+                </View>
+
+                <View style={styles.flex1}>
+                  <Input
+                    placeholder="Cidade *"
+                    value={cidade}
+                    onChangeText={setCidade}
+                  />
+                </View>
               </View>
+
+              <Input
+                placeholder="Estado"
+                value={estadoExtenso}
+                editable={false}
+              />
+            </>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contato</Text>
+
+          <View style={styles.row}>
+            <View style={styles.dddBox}>
+              <Input
+                placeholder="DDD *"
+                value={ddd}
+                onChangeText={setDdd}
+                keyboardType="numeric"
+              />
             </View>
 
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Bairro *"
-                  value={bairro}
-                  onChangeText={setBairro}
-                />
-              </View>
-
-              <View style={styles.flex1}>
-                <Input
-                  placeholder="Cidade *"
-                  value={cidade}
-                  onChangeText={setCidade}
-                />
-              </View>
+            <View style={styles.phoneBox}>
+              <Input
+                placeholder="Telefone *"
+                value={telefone}
+                onChangeText={setTelefone}
+                keyboardType="phone-pad"
+              />
             </View>
+          </View>
 
-            <Input
-              placeholder="Estado"
-              value={estadoExtenso}
-              editable={false}
-            />
-          </>
-        )}
+          <Input
+            placeholder="Email *"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
 
-        <Input placeholder="DDD *" value={ddd} onChangeText={setDdd} />
-        <Input placeholder="Telefone *" value={telefone} onChangeText={setTelefone} />
-        <Input placeholder="Email *" value={email} onChangeText={setEmail} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso</Text>
 
-        <Input
-          placeholder="Senha *"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-        />
+          <Input
+            placeholder="Senha *"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry
+          />
 
-        <Input
-          placeholder="Confirmar senha *"
-          value={confirmarSenha}
-          onChangeText={setConfirmarSenha}
-          secureTextEntry
-        />
+          <Text style={styles.helperText}>
+            A senha deve ter no mínimo 8 caracteres, 1 número e 1 caractere
+            especial.
+          </Text>
 
-        {/* Picker mantido */}
-        <Picker selectedValue={servico} onValueChange={setServico}>
-          <Picker.Item label="Selecione o serviço" value="" />
-          <Picker.Item label="Pedreiro" value="Pedreiro" />
-          <Picker.Item label="Eletricista" value="Eletricista" />
-          <Picker.Item label="Pintor" value="Pintor" />
-          <Picker.Item label="Encanador" value="Encanador" />
-        </Picker>
+          <Input
+            placeholder="Confirmar senha *"
+            value={confirmarSenha}
+            onChangeText={setConfirmarSenha}
+            secureTextEntry
+          />
 
-        <Button title="Cadastrar" onPress={handleSubmit} disabled={!camposValidos} />
+          {confirmarSenha.length > 0 && senha !== confirmarSenha && (
+            <Text style={styles.errorText}>As senhas não coincidem.</Text>
+          )}
+        </View>
 
-        <Button
-          title="Voltar"
-          onPress={() => goTo("chooseRegister")}
-          type="secondary"
-        />
+        <View style={styles.actions}>
+          <Button
+            title="Criar conta profissional"
+            onPress={handleSubmit}
+            disabled={!camposValidos}
+          />
+
+          <Button
+            title="Voltar"
+            onPress={() => goTo("chooseRegister")}
+            type="secondary"
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  header: { padding: 16 },
-  headerText: { fontSize: 20, fontWeight: "bold" },
-  container: { padding: 16 },
-  asterisco: { marginBottom: 10, color: "red" },
-  row: { flexDirection: "row", gap: 10 },
-  flex1: { flex: 1 },
-  flex2: { flex: 2 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f1f1",
+  },
+
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 4,
+  },
+
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+
+  container: {
+    padding: 22,
+    paddingBottom: 35,
+  },
+
+  requiredText: {
+    color: "#ff8c1a",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 14,
+  },
+
+  section: {
+    marginBottom: 22,
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 12,
+  },
+
+  helperText: {
+    color: "#777",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: -4,
+    marginBottom: 10,
+  },
+
+  successText: {
+    color: "#198754",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+
+  errorText: {
+    color: "#d93025",
+    fontSize: 12,
+    marginTop: -4,
+    marginBottom: 8,
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+    overflow: "hidden",
+  },
+
+  picker: {
+    height: 52,
+    color: "#333",
+  },
+
+  row: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  flex1: {
+    flex: 1,
+  },
+
+  flex2: {
+    flex: 2,
+  },
+
+  dddBox: {
+    flex: 0.35,
+  },
+
+  phoneBox: {
+    flex: 1,
+  },
+
+  actions: {
+    marginTop: 6,
+  },
 });
