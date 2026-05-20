@@ -3,7 +3,10 @@ import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../services/firebaseConfig";
 
 export default function RegisterScreen({ goTo }) {
   const [nome, setNome] = useState("");
@@ -29,6 +32,7 @@ export default function RegisterScreen({ goTo }) {
 
   const [enderecoEncontrado, setEnderecoEncontrado] = useState(false);
   const [ultimoCepBuscado, setUltimoCepBuscado] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const estados = {
     AC: "Acre",
@@ -118,6 +122,7 @@ export default function RegisterScreen({ goTo }) {
   };
 
   const telefoneLimpo = telefone.replace(/\D/g, "");
+  const emailFormatado = email.trim().toLowerCase();
 
   const camposValidos =
     nome.trim() &&
@@ -129,7 +134,7 @@ export default function RegisterScreen({ goTo }) {
     ddd.trim().length === 2 &&
     telefoneLimpo.length >= 8 &&
     telefoneLimpo.length <= 9 &&
-    email.trim() &&
+    emailFormatado &&
     senha.trim() &&
     validarSenha(senha) &&
     confirmarSenha.trim() &&
@@ -141,35 +146,65 @@ export default function RegisterScreen({ goTo }) {
       return;
     }
 
-    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
-    const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
-
-    const dados = {
-      nome,
-      rg,
-      cpf,
-      endereco: enderecoCompleto,
-      referencia,
-      telefone: telefoneCompleto,
-      email: email.toLowerCase(),
-      senha,
-    };
+    setCarregando(true);
 
     try {
-      const data = await AsyncStorage.getItem("usuarios");
-      let usuariosExistentes = data ? JSON.parse(data) : [];
-
-      usuariosExistentes.push(dados);
-
-      await AsyncStorage.setItem(
-        "usuarios",
-        JSON.stringify(usuariosExistentes)
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        emailFormatado,
+        senha
       );
 
+      const user = userCredential.user;
+
+      const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
+      const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
+
+      const dadosUsuario = {
+        uid: user.uid,
+        tipo: "usuario",
+        nome: nome.trim(),
+        rg: rg.trim(),
+        cpf: cpf.trim(),
+        cep: cep.replace(/\D/g, ""),
+        endereco: enderecoCompleto,
+        logradouro,
+        numero,
+        referencia: referencia.trim(),
+        bairro,
+        cidade,
+        uf,
+        estado: estadoExtenso,
+        telefone: telefoneCompleto,
+        ddd,
+        email: emailFormatado,
+        criadoEm: serverTimestamp(),
+      };
+
+      await setDoc(doc(db, "users", user.uid), dadosUsuario);
+
       Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      goTo("chooseRegister");
+      goTo("home");
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar o cadastro.");
+      console.log("Erro ao cadastrar usuário:", error);
+
+      let mensagem = "Não foi possível realizar o cadastro.";
+
+      if (error.code === "auth/email-already-in-use") {
+        mensagem = "Este email já está cadastrado.";
+      }
+
+      if (error.code === "auth/invalid-email") {
+        mensagem = "Email inválido.";
+      }
+
+      if (error.code === "auth/weak-password") {
+        mensagem = "A senha é muito fraca.";
+      }
+
+      Alert.alert("Erro", mensagem);
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -340,9 +375,9 @@ export default function RegisterScreen({ goTo }) {
 
         <View style={styles.actions}>
           <Button
-            title="Criar minha conta"
+            title={carregando ? "Criando conta..." : "Criar minha conta"}
             onPress={handleSubmit}
-            disabled={!camposValidos}
+            disabled={!camposValidos || carregando}
           />
 
           <Button

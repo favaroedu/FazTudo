@@ -1,11 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 
-import {
-  GoogleAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
-
 import React, { useState, useEffect } from "react";
 
 import {
@@ -18,7 +13,13 @@ import {
   ScrollView,
 } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+import { doc, getDoc } from "firebase/firestore";
 
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -26,13 +27,14 @@ import Button from "../components/Button";
 import logo from "../../assets/logo.png";
 import googleLogo from "../../assets/google.png";
 
-import { auth } from "../services/firebaseConfig";
+import { auth, db } from "../services/firebaseConfig";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ goTo }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId:
@@ -41,58 +43,102 @@ export default function LoginScreen({ goTo }) {
       "1013595704590-bnpd9sjgpmbg7idrmocugi165gq9q6io.apps.googleusercontent.com",
   });
 
+  const redirecionarPorTipo = async (user) => {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      Alert.alert(
+        "Cadastro incompleto",
+        "Escolha o tipo de conta para finalizar seu cadastro."
+      );
+
+      goTo("chooseRegister");
+      return;
+    }
+
+    const dados = userSnap.data();
+
+    if (dados.tipo === "usuario") {
+      goTo("home");
+      return;
+    }
+
+    if (dados.tipo === "profissional") {
+      goTo("homeProfissional");
+      return;
+    }
+
+    Alert.alert("Erro", "Tipo de conta não identificado.");
+  };
+
   useEffect(() => {
-    if (response?.type !== "success") return;
+    const loginGoogle = async () => {
+      if (response?.type !== "success") return;
 
-    const { authentication } = response;
-    if (!authentication) return;
+      const { authentication } = response;
+      if (!authentication) return;
 
-    const credential = GoogleAuthProvider.credential(
-      authentication.idToken,
-      authentication.accessToken
-    );
+      try {
+        setCarregando(true);
 
-    signInWithCredential(auth, credential)
-      .then((userCredential) => {
-        Alert.alert("Sucesso", `Bem-vindo ${userCredential.user.displayName}`);
-        goTo("home");
-      })
-      .catch((error) => {
-        console.error(error);
+        const credential = GoogleAuthProvider.credential(
+          authentication.idToken,
+          authentication.accessToken
+        );
+
+        const userCredential = await signInWithCredential(auth, credential);
+
+        await redirecionarPorTipo(userCredential.user);
+      } catch (error) {
+        console.error("Erro Google Login:", error);
         Alert.alert("Erro", "Não foi possível entrar com Google.");
-      });
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    loginGoogle();
   }, [response]);
 
   const handleLogin = async () => {
-    if (!email.trim() || !senha.trim()) {
+    const emailFormatado = email.trim().toLowerCase();
+
+    if (!emailFormatado || !senha.trim()) {
       Alert.alert("Erro", "Preencha email e senha.");
       return;
     }
 
     try {
-      const usuarios =
-        JSON.parse(await AsyncStorage.getItem("usuarios")) || [];
+      setCarregando(true);
 
-      const profissionais =
-        JSON.parse(await AsyncStorage.getItem("profissionais")) || [];
-
-      const todos = [...usuarios, ...profissionais];
-
-      const encontrado = todos.find(
-        (u) =>
-          u.email === email.trim().toLowerCase() &&
-          u.senha === senha
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        emailFormatado,
+        senha
       );
 
-      if (encontrado) {
-        Alert.alert("Sucesso", "Login realizado com sucesso!");
-        goTo("home");
-      } else {
-        Alert.alert("Erro", "Email ou senha incorretos.");
-      }
+      await redirecionarPorTipo(userCredential.user);
     } catch (error) {
       console.error("Erro ao tentar login:", error);
-      Alert.alert("Erro", "Não foi possível realizar o login.");
+
+      let mensagem = "Não foi possível realizar o login.";
+
+      if (
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found"
+      ) {
+        mensagem = "Email ou senha incorretos.";
+      }
+
+      if (error.code === "auth/invalid-email") {
+        mensagem = "Email inválido.";
+      }
+
+      Alert.alert("Erro", mensagem);
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -137,7 +183,11 @@ export default function LoginScreen({ goTo }) {
             <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
           </TouchableOpacity>
 
-          <Button title="Entrar" onPress={handleLogin} />
+          <Button
+            title={carregando ? "Entrando..." : "Entrar"}
+            onPress={handleLogin}
+            disabled={carregando}
+          />
 
           <Button
             title="Cadastrar"
@@ -154,10 +204,10 @@ export default function LoginScreen({ goTo }) {
           <TouchableOpacity
             style={[
               styles.googleButton,
-              !request && styles.googleButtonDisabled,
+              (!request || carregando) && styles.googleButtonDisabled,
             ]}
             onPress={handleGoogleLogin}
-            disabled={!request}
+            disabled={!request || carregando}
           >
             <Image source={googleLogo} style={styles.googleLogo} />
 

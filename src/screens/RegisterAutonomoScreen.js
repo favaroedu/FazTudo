@@ -4,7 +4,10 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../services/firebaseConfig";
 
 export default function RegisterAutonomoScreen({ goTo }) {
   const [nome, setNome] = useState("");
@@ -29,9 +32,9 @@ export default function RegisterAutonomoScreen({ goTo }) {
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
   const [servico, setServico] = useState("");
-
   const [enderecoEncontrado, setEnderecoEncontrado] = useState(false);
   const [ultimoCepBuscado, setUltimoCepBuscado] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const estados = {
     AC: "Acre",
@@ -114,7 +117,6 @@ export default function RegisterAutonomoScreen({ goTo }) {
       setCidade(data.localidade || "");
       setUf(data.uf || "");
       setEstadoExtenso(estados[data.uf] || data.uf);
-
       setEnderecoEncontrado(true);
     } catch (error) {
       console.log("Erro ViaCEP:", error);
@@ -144,6 +146,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
   };
 
   const telefoneLimpo = telefone.replace(/\D/g, "");
+  const emailFormatado = email.trim().toLowerCase();
 
   const camposValidos =
     nome.trim() &&
@@ -156,7 +159,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
     ddd.trim().length === 2 &&
     telefoneLimpo.length >= 8 &&
     telefoneLimpo.length <= 9 &&
-    email.trim() &&
+    emailFormatado &&
     senha.trim() &&
     validarSenha(senha) &&
     confirmarSenha.trim() &&
@@ -168,36 +171,66 @@ export default function RegisterAutonomoScreen({ goTo }) {
       return;
     }
 
-    const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
-    const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
-
-    const dados = {
-      nome,
-      rg,
-      cpf,
-      servico,
-      endereco: enderecoCompleto,
-      referencia,
-      telefone: telefoneCompleto,
-      email: email.toLowerCase(),
-      senha,
-    };
+    setCarregando(true);
 
     try {
-      const data = await AsyncStorage.getItem("profissionais");
-      let profissionaisExistentes = data ? JSON.parse(data) : [];
-
-      profissionaisExistentes.push(dados);
-
-      await AsyncStorage.setItem(
-        "profissionais",
-        JSON.stringify(profissionaisExistentes)
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        emailFormatado,
+        senha
       );
 
-      Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      goTo("chooseRegister");
+      const user = userCredential.user;
+
+      const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
+      const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
+
+      const dadosProfissional = {
+        uid: user.uid,
+        tipo: "profissional",
+        nome: nome.trim(),
+        rg: rg.trim(),
+        cpf: cpf.trim(),
+        servico,
+        cep: cep.replace(/\D/g, ""),
+        endereco: enderecoCompleto,
+        logradouro,
+        numero,
+        referencia: referencia.trim(),
+        bairro,
+        cidade,
+        uf,
+        estado: estadoExtenso,
+        telefone: telefoneCompleto,
+        ddd,
+        email: emailFormatado,
+        criadoEm: serverTimestamp(),
+      };
+
+      await setDoc(doc(db, "users", user.uid), dadosProfissional);
+
+      Alert.alert("Sucesso", "Cadastro profissional realizado com sucesso!");
+      goTo("homeProfissional");
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar o cadastro.");
+      console.log("Erro ao cadastrar profissional:", error);
+
+      let mensagem = "Não foi possível realizar o cadastro.";
+
+      if (error.code === "auth/email-already-in-use") {
+        mensagem = "Este email já está cadastrado.";
+      }
+
+      if (error.code === "auth/invalid-email") {
+        mensagem = "Email inválido.";
+      }
+
+      if (error.code === "auth/weak-password") {
+        mensagem = "A senha é muito fraca.";
+      }
+
+      Alert.alert("Erro", mensagem);
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -389,9 +422,13 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
         <View style={styles.actions}>
           <Button
-            title="Criar conta profissional"
+            title={
+              carregando
+                ? "Criando conta..."
+                : "Criar conta profissional"
+            }
             onPress={handleSubmit}
-            disabled={!camposValidos}
+            disabled={!camposValidos || carregando}
           />
 
           <Button
