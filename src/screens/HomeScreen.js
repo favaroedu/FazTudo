@@ -8,9 +8,11 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   ScrollView,
+  Alert,
 } from "react-native";
 
 import Button from "../components/Button";
+import AppHeader from "../components/AppHeader";
 import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,7 +21,7 @@ const screenWidth = Dimensions.get("window").width;
 export default function HomeScreen({ goTo }) {
   const [servico, setServico] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
-  const menuAnim = useRef(new Animated.Value(-screenWidth)).current;
+  const menuAnim = useRef(new Animated.Value(screenWidth)).current;
 
   const servicos = [
     "Construção",
@@ -53,6 +55,17 @@ export default function HomeScreen({ goTo }) {
     "Jardinagem",
   ];
 
+  const confirmarVoltar = () => {
+    Alert.alert(
+      "Voltar para o login?",
+      "Você deseja sair da página inicial e voltar para o login?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Sim, voltar", onPress: () => goTo("login") },
+      ]
+    );
+  };
+
   const handleBuscar = () => {
     if (servico) {
       goTo("search", { servico });
@@ -74,7 +87,7 @@ export default function HomeScreen({ goTo }) {
 
   const fecharMenu = () => {
     Animated.timing(menuAnim, {
-      toValue: -screenWidth,
+      toValue: screenWidth,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setMenuAberto(false));
@@ -82,16 +95,14 @@ export default function HomeScreen({ goTo }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={abrirMenu}>
-          <Text style={styles.menu}>☰</Text>
-        </TouchableOpacity>
-
-        <View>
-          <Text style={styles.headerText}>FazTudo</Text>
-          <Text style={styles.headerSubtitle}>Profissionais para sua casa</Text>
-        </View>
-      </View>
+      <AppHeader
+        title="FazTudo"
+        subtitle="Profissionais para sua casa"
+        showBack
+        showMenu
+        onBack={confirmarVoltar}
+        onMenu={abrirMenu}
+      />
 
       {menuAberto && (
         <TouchableWithoutFeedback onPress={fecharMenu}>
@@ -99,7 +110,7 @@ export default function HomeScreen({ goTo }) {
         </TouchableWithoutFeedback>
       )}
 
-      <Animated.View style={[styles.menuContainer, { left: menuAnim }]}>
+      <Animated.View style={[styles.menuContainer, { right: menuAnim }]}>
         <View style={styles.menuContent}>
           <View style={styles.userInfo}>
             <View style={styles.avatar} />
@@ -198,32 +209,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-
-  header: {
-    backgroundColor: "#ff9100ff",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  menu: {
-    fontSize: 28,
-    color: "#fff",
-    marginRight: 14,
-  },
-
-  headerText: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  headerSubtitle: {
-    color: "#fff",
-    fontSize: 12,
-    opacity: 0.9,
   },
 
   container: {
@@ -368,8 +353,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    left: Dimensions.get("window").width * 0.75,
-    right: 0,
+    left: 0,
+    right: Dimensions.get("window").width * 0.75,
     backgroundColor: "rgba(0,0,0,0.3)",
     zIndex: 15,
   },

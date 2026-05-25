@@ -3,24 +3,37 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
   ScrollView,
+  Alert,
 } from "react-native";
 
 import Button from "../components/Button";
+import AppHeader from "../components/AppHeader";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function HomeProfissionalScreen({ goTo }) {
   const [menuAberto, setMenuAberto] = useState(false);
-  const menuAnim = useRef(new Animated.Value(-screenWidth)).current;
+  const menuAnim = useRef(new Animated.Value(screenWidth)).current;
+
+  const confirmarVoltar = () => {
+    Alert.alert(
+      "Voltar para o login?",
+      "Você deseja sair da página inicial?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Sim, sair", onPress: () => goTo("login") },
+      ]
+    );
+  };
 
   const abrirMenu = () => {
     setMenuAberto(true);
+
     Animated.timing(menuAnim, {
       toValue: 0,
       duration: 300,
@@ -30,7 +43,7 @@ export default function HomeProfissionalScreen({ goTo }) {
 
   const fecharMenu = () => {
     Animated.timing(menuAnim, {
-      toValue: -screenWidth,
+      toValue: screenWidth,
       duration: 300,
       useNativeDriver: false,
     }).start(() => setMenuAberto(false));
@@ -38,16 +51,15 @@ export default function HomeProfissionalScreen({ goTo }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={abrirMenu}>
-          <Text style={styles.menu}>☰</Text>
-        </TouchableOpacity>
-
-        <View>
-          <Text style={styles.headerText}>Painel Profissional</Text>
-          <Text style={styles.headerSubtitle}>Gerencie seus serviços</Text>
-        </View>
-      </View>
+      <AppHeader
+        title="Painel Profissional"
+        subtitle="Gerencie seus serviços"
+        showBack
+        showMenu
+        backgroundColor="#0A2F73"
+        onBack={confirmarVoltar}
+        onMenu={abrirMenu}
+      />
 
       {menuAberto && (
         <TouchableWithoutFeedback onPress={fecharMenu}>
@@ -55,7 +67,7 @@ export default function HomeProfissionalScreen({ goTo }) {
         </TouchableWithoutFeedback>
       )}
 
-      <Animated.View style={[styles.menuContainer, { left: menuAnim }]}>
+      <Animated.View style={[styles.menuContainer, { right: menuAnim }]}>
         <View style={styles.menuContent}>
           <View style={styles.userInfo}>
             <View style={styles.avatar} />
@@ -63,16 +75,57 @@ export default function HomeProfissionalScreen({ goTo }) {
             <Text style={styles.userEmail}>profissional@email.com</Text>
           </View>
 
-          <Button title="Meu Perfil Profissional" onPress={() => goTo("profile")} />
-          <Button title="Solicitações Recebidas" onPress={() => goTo("solicitacoes")} />
-          <Button title="Minha Agenda" onPress={() => goTo("agenda")} />
-          <Button title="Meus Serviços" onPress={() => goTo("meusServicos")} />
-          <Button title="Avaliações" onPress={() => goTo("avaliacoes")} />
-          <Button title="Mensagens" onPress={() => goTo("mensagens")} />
-          <Button title="Configurações" onPress={() => goTo("configuracoes")} />
-          <Button title="Suporte" onPress={() => goTo("suporte")} />
-          <Button title="Sair do aplicativo" onPress={() => goTo("login")} type="secondary" />
-          <Button title="Fechar menu" onPress={fecharMenu} type="secondary" />
+          <Button
+            title="Meu Perfil Profissional"
+            onPress={() => goTo("profile")}
+          />
+
+          <Button
+            title="Solicitações Recebidas"
+            onPress={() => goTo("solicitacoes")}
+          />
+
+          <Button
+            title="Minha Agenda"
+            onPress={() => goTo("agenda")}
+          />
+
+          <Button
+            title="Meus Serviços"
+            onPress={() => goTo("meusServicos")}
+          />
+
+          <Button
+            title="Avaliações"
+            onPress={() => goTo("avaliacoes")}
+          />
+
+          <Button
+            title="Mensagens"
+            onPress={() => goTo("mensagens")}
+          />
+
+          <Button
+            title="Configurações"
+            onPress={() => goTo("configuracoes")}
+          />
+
+          <Button
+            title="Suporte"
+            onPress={() => goTo("suporte")}
+          />
+
+          <Button
+            title="Sair do aplicativo"
+            onPress={() => goTo("login")}
+            type="secondary"
+          />
+
+          <Button
+            title="Fechar menu"
+            onPress={fecharMenu}
+            type="secondary"
+          />
         </View>
       </Animated.View>
 
@@ -82,6 +135,7 @@ export default function HomeProfissionalScreen({ goTo }) {
       >
         <View style={styles.heroCard}>
           <Text style={styles.heroTitle}>Bem-vindo ao seu painel</Text>
+
           <Text style={styles.heroSubtitle}>
             Acompanhe solicitações, gerencie sua agenda e organize seus serviços.
           </Text>
@@ -102,15 +156,30 @@ export default function HomeProfissionalScreen({ goTo }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ações rápidas</Text>
 
-          <Button title="Ver solicitações recebidas" onPress={() => goTo("solicitacoes")} />
-          <Button title="Abrir minha agenda" onPress={() => goTo("agenda")} type="secondary" />
-          <Button title="Editar meus serviços" onPress={() => goTo("meusServicos")} type="secondary" />
+          <Button
+            title="Ver solicitações recebidas"
+            onPress={() => goTo("solicitacoes")}
+          />
+
+          <Button
+            title="Abrir minha agenda"
+            onPress={() => goTo("agenda")}
+            type="secondary"
+          />
+
+          <Button
+            title="Editar meus serviços"
+            onPress={() => goTo("meusServicos")}
+            type="secondary"
+          />
         </View>
 
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Dica para profissionais</Text>
+
           <Text style={styles.infoText}>
-            Mantenha seus dados atualizados para aumentar suas chances de ser encontrado por clientes.
+            Mantenha seus dados atualizados para aumentar suas chances de ser
+            encontrado por clientes.
           </Text>
         </View>
       </ScrollView>
@@ -122,32 +191,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-
-  header: {
-    backgroundColor: "#0A2F73",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  menu: {
-    fontSize: 28,
-    color: "#fff",
-    marginRight: 14,
-  },
-
-  headerText: {
-    color: "#fff",
-    fontSize: 21,
-    fontWeight: "800",
-  },
-
-  headerSubtitle: {
-    color: "#fff",
-    fontSize: 12,
-    opacity: 0.9,
   },
 
   container: {
@@ -246,7 +289,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
     paddingTop: 60,
     shadowColor: "#000",
-    shadowOffset: { width: 2, height: 0 },
+    shadowOffset: { width: -2, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
@@ -260,8 +303,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    left: Dimensions.get("window").width * 0.75,
-    right: 0,
+    left: 0,
+    right: Dimensions.get("window").width * 0.75,
     backgroundColor: "rgba(0,0,0,0.3)",
     zIndex: 15,
   },

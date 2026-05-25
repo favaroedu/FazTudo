@@ -1,58 +1,99 @@
 import React from "react";
-import { View, StyleSheet, Text, Image } from "react-native";
+
+import {
+  View,
+  StyleSheet,
+  Text,
+  Image,
+} from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import Button from "../components/Button";
+import AppHeader from "../components/AppHeader";
 
 import logo from "../../assets/logo.png";
 
 export default function ChooseRegisterScreen({ goTo }) {
   return (
-    <View style={styles.container}>
-      <Image source={logo} style={styles.logo} />
+    <SafeAreaView style={styles.safeArea}>
+      <AppHeader
+        title="Criar conta"
+        subtitle="Escolha como deseja utilizar o app"
+        showBack
+        onBack={() => goTo("login")}
+        backgroundColor="#0A2F73"
+      />
 
-      <Text style={styles.title}>Como você quer se cadastrar?</Text>
+      <View style={styles.container}>
+        <Image source={logo} style={styles.logo} />
 
-      <Text style={styles.subtitle}>
-        Escolha uma opção para continuar no FazTudo.
-      </Text>
+        <Text style={styles.title}>
+          Como você quer se cadastrar?
+        </Text>
 
-      <View style={styles.card}>
-        <Button
-          title="Quero contratar um profissional"
-          onPress={() => goTo("registerUser")}
-          type="secondary"
-        />
+        <Text style={styles.subtitle}>
+          Escolha uma opção para continuar no FazTudo.
+        </Text>
 
-        <Button
-          title="Quero oferecer meus serviços"
-          onPress={() => goTo("registerAutonomo")}
-          type="secondary"
-        />
+        <View style={styles.card}>
+          <View style={styles.optionCard}>
+            <Text style={styles.optionTitle}>
+              Quero contratar um profissional
+            </Text>
 
-        <View style={styles.separator} />
+            <Text style={styles.optionDescription}>
+              Busque profissionais para serviços residenciais e acompanhe seus agendamentos.
+            </Text>
 
-        <Button
-          title="Voltar ao LOGIN"
-          onPress={() => goTo("login")}
-        />
+            <Button
+              title="Cadastrar como usuário"
+              onPress={() => goTo("registerUser")}
+              type="secondary"
+            />
+          </View>
+
+          <View style={styles.optionCard}>
+            <Text style={styles.optionTitle}>
+              Quero oferecer meus serviços
+            </Text>
+
+            <Text style={styles.optionDescription}>
+              Divulgue seus serviços e receba solicitações de clientes.
+            </Text>
+
+            <Button
+              title="Cadastrar como profissional"
+              onPress={() => goTo("registerAutonomo")}
+              type="secondary"
+            />
+          </View>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
   container: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
+    paddingBottom: 24,
     backgroundColor: "#fff",
   },
 
   logo: {
-    width: 180,
-    height: 180,
+    width: 160,
+    height: 160,
     resizeMode: "contain",
     alignSelf: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
 
   title: {
@@ -67,16 +108,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 28,
+    lineHeight: 20,
   },
 
   card: {
     width: "100%",
   },
 
-  separator: {
-    height: 1,
-    backgroundColor: "#eee",
-    marginVertical: 14,
+  optionCard: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+  },
+
+  optionTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 8,
+  },
+
+  optionDescription: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 19,
+    marginBottom: 14,
   },
 });

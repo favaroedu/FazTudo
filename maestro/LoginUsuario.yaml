@@ -5,6 +5,7 @@ appId: host.exp.exponent
 - inputText: ${email}
 - tapOn: "Senha"
 - inputText: ${password}
+- back
 - tapOn: "Entrar"
 - assertVisible: "Sucesso"
 - tapOn: "OK"

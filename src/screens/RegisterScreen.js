@@ -8,6 +8,8 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../services/firebaseConfig";
 
+import AppHeader from "../components/AppHeader";
+
 export default function RegisterScreen({ goTo }) {
   const [nome, setNome] = useState("");
   const [rg, setRg] = useState("");
@@ -210,12 +212,13 @@ export default function RegisterScreen({ goTo }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cadastro de Usuário</Text>
-        <Text style={styles.headerSubtitle}>
-          Preencha seus dados para criar sua conta no FazTudo.
-        </Text>
-      </View>
+      <AppHeader
+        title="Cadastro de Usuário"
+        subtitle="Preencha seus dados para criar sua conta"
+        showBack
+        onBack={() => goTo("chooseRegister")}
+        backgroundColor="#0A2F73"
+      />
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -380,11 +383,6 @@ export default function RegisterScreen({ goTo }) {
             disabled={!camposValidos || carregando}
           />
 
-          <Button
-            title="Voltar"
-            onPress={() => goTo("chooseRegister")}
-            type="secondary"
-          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -395,28 +393,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-
-  header: {
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f1f1",
-  },
-
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0A2F73",
-    marginBottom: 4,
-  },
-
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
   },
 
   container: {
