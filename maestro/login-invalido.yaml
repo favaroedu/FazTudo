@@ -1,0 +1,22 @@
+appId: com.seuapp.faztudo
+---
+
+- assertVisible: "Bem-vindo ao FazTudo"
+
+- tapOn: "Email"
+- inputText: "teste@teste.com"
+
+- tapOn: "Senha"
+- inputText: "senhaerrada"
+
+- tapOn:
+    id: "0_resource_name_obfuscated"
+    index: 48
+
+- tapOn: "Entrar"
+
+- assertVisible: "Email ou senha incorretos."
+
+- tapOn: "OK"
+
+- assertVisible: "Bem-vindo ao FazTudo"

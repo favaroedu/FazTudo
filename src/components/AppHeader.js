@@ -23,6 +23,7 @@ export default function AppHeader({
       <View style={styles.leftContainer}>
         {showBack && (
           <TouchableOpacity
+            testID="back-button"
             onPress={onBack}
             style={styles.iconButton}
           >
@@ -45,6 +46,7 @@ export default function AppHeader({
 
       {showMenu && (
         <TouchableOpacity
+          testID="menu-button"
           onPress={onMenu}
           style={styles.menuButton}
         >

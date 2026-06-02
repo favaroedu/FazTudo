@@ -1,0 +1,68 @@
+appId: com.seuapp.faztudo
+---
+- assertVisible: "Bem-vindo ao FazTudo"
+
+- tapOn: "Cadastrar"
+- assertVisible: "Criar conta"
+
+- tapOn: "Cadastrar como usuário"
+- assertVisible: "Cadastro de Usuário"
+
+- tapOn: "Nome completo *"
+- inputText: "Teste Usuario Maestro"
+
+- tapOn: "RG *"
+- inputText: "12345678"
+
+- tapOn: "CPF *"
+- inputText: "12345678901"
+
+- tapOn: "CEP *"
+- inputText: "51020000"
+
+- assertVisible: "Endereço encontrado ✓"
+
+
+- tapOn: "Número *"
+- inputText: "100"
+
+- scroll
+
+- tapOn: "DDD *"
+- inputText: "81"
+
+- tapOn: "Telefone *"
+- inputText: "999999999"
+
+- tapOn: "Email *"
+- inputText: "teste.maestro.usuario04@gmail.com"
+
+- scroll
+
+- tapOn: "Senha *"
+- inputText: "Teste@123"
+
+- tapOn:
+    id: "0_resource_name_obfuscated"
+    index: 48
+
+- tapOn: "Confirmar senha *"
+- inputText: "Teste@123"
+
+- tapOn:
+    id: "0_resource_name_obfuscated"
+    index: 48
+
+
+- tapOn: "Criar minha conta"
+
+- assertVisible: "Sucesso"
+
+- tapOn: "OK"
+
+- assertVisible: "FazTudo"
+
+- tapOn:
+    id: "back-button"
+
+- tapOn: "SIM, VOLTAR"

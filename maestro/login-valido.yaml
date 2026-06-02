@@ -1,0 +1,23 @@
+appId: com.seuapp.faztudo
+---
+- assertVisible: "Bem-vindo ao FazTudo"
+
+- tapOn: "Email"
+- inputText: ${email}
+
+- tapOn: "Senha"
+- inputText: ${password}
+
+- tapOn: "Entrar"
+
+- assertVisible: "FazTudo"
+- assertVisible: "Profissionais para sua casa"
+
+- tapOn:
+    id: "back-button"
+
+- assertVisible: "Voltar para o login?"
+
+- tapOn: "SIM, VOLTAR"
+
+- assertVisible: "Bem-vindo ao FazTudo"
