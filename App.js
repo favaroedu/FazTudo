@@ -11,6 +11,8 @@ import RegisterAutonomoScreen from "./src/screens/RegisterAutonomoScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import HomeProfissionalScreen from "./src/screens/HomeProfissionalScreen";
 
+import ProfileScreen from "./src/screens/ProfileScreen";
+
 import ForgotPassword from "./src/screens/ForgotPassword";
 
 export default function App() {
@@ -38,6 +40,9 @@ export default function App() {
 
     case "homeProfissional":
       return <HomeProfissionalScreen goTo={goTo} />;
+
+    case "profile":
+      return <ProfileScreen goTo={goTo} />;
 
     case "forgotPassword":
       return <ForgotPassword goTo={goTo} />;

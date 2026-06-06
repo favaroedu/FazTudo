@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -11,16 +12,23 @@ import {
   Alert,
 } from "react-native";
 
-import Button from "../components/Button";
-import AppHeader from "../components/AppHeader";
 import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../services/firebaseConfig";
+
+import Button from "../components/Button";
+import AppHeader from "../components/AppHeader";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function HomeScreen({ goTo }) {
   const [servico, setServico] = useState("");
   const [menuAberto, setMenuAberto] = useState(false);
+  const [usuario, setUsuario] = useState(null);
+
   const menuAnim = useRef(new Animated.Value(screenWidth)).current;
 
   const servicos = [
@@ -55,15 +63,46 @@ export default function HomeScreen({ goTo }) {
     "Jardinagem",
   ];
 
+  const carregarUsuario = async () => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        setUsuario(userSnap.data());
+      }
+    } catch (error) {
+      console.log("Erro ao carregar usuário:", error);
+    }
+  };
+
+  useEffect(() => {
+    carregarUsuario();
+  }, []);
+
   const confirmarVoltar = () => {
     Alert.alert(
       "Voltar para o login?",
       "Você deseja sair da página inicial e voltar para o login?",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Sim, voltar", onPress: () => goTo("login") },
+        { text: "Sim, voltar", onPress: () => sairDoApp() },
       ]
     );
+  };
+
+  const sairDoApp = async () => {
+    try {
+      await signOut(auth);
+      goTo("login");
+    } catch (error) {
+      console.log("Erro ao sair:", error);
+      Alert.alert("Erro", "Não foi possível sair da conta.");
+    }
   };
 
   const handleBuscar = () => {
@@ -78,6 +117,7 @@ export default function HomeScreen({ goTo }) {
 
   const abrirMenu = () => {
     setMenuAberto(true);
+
     Animated.timing(menuAnim, {
       toValue: 0,
       duration: 300,
@@ -113,21 +153,38 @@ export default function HomeScreen({ goTo }) {
       <Animated.View style={[styles.menuContainer, { right: menuAnim }]}>
         <View style={styles.menuContent}>
           <View style={styles.userInfo}>
-            <View style={styles.avatar} />
-            <Text style={styles.userName}>Olá, Usuário!</Text>
-            <Text style={styles.userEmail}>usuario@email.com</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {usuario?.nome ? usuario.nome.charAt(0).toUpperCase() : "U"}
+              </Text>
+            </View>
+
+            <Text style={styles.userName}>
+              Olá, {usuario?.nome ? usuario.nome.split(" ")[0] : "Usuário"}!
+            </Text>
+
+            <Text style={styles.userEmail}>
+              {usuario?.email || "email não informado"}
+            </Text>
           </View>
 
           <Button title="Meu Perfil" onPress={() => goTo("profile")} />
-          <Button title="Meus Agendamentos" onPress={() => goTo("agendamentos")} />
-          <Button title="Histórico" onPress={() => goTo("historico")} />
-          <Button title="Mensagens" onPress={() => goTo("mensagens")} />
-          <Button title="Avaliações" onPress={() => goTo("avaliacoes")} />
-          <Button title="Endereço" onPress={() => goTo("endereco")} />
+          <Button title="Favoritos" onPress={() => goTo("favoritos")} />
+          <Button title="Minhas Avaliações" onPress={() => goTo("avaliacoes")} />
           <Button title="Configurações" onPress={() => goTo("configuracoes")} />
           <Button title="Suporte" onPress={() => goTo("suporte")} />
-          <Button title="Sair do aplicativo" onPress={() => goTo("login")} type="secondary" />
-          <Button title="Fechar menu" onPress={fecharMenu} type="secondary" />
+
+          <Button
+            title="Sair do aplicativo"
+            onPress={sairDoApp}
+            type="secondary"
+          />
+
+          <Button
+            title="Fechar menu"
+            onPress={fecharMenu}
+            type="secondary"
+          />
         </View>
       </Animated.View>
 
@@ -137,6 +194,7 @@ export default function HomeScreen({ goTo }) {
       >
         <View style={styles.heroCard}>
           <Text style={styles.heroTitle}>Olá, o que você precisa hoje?</Text>
+
           <Text style={styles.heroSubtitle}>
             Encontre profissionais de confiança para serviços residenciais.
           </Text>
@@ -144,7 +202,10 @@ export default function HomeScreen({ goTo }) {
 
         <View style={styles.searchCard}>
           <Text style={styles.sectionTitle}>Buscar profissional</Text>
-          <Text style={styles.helperText}>Selecione uma área de serviço:</Text>
+
+          <Text style={styles.helperText}>
+            Selecione uma área de serviço:
+          </Text>
 
           <View style={styles.pickerContainer}>
             <Picker
@@ -195,9 +256,10 @@ export default function HomeScreen({ goTo }) {
 
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Como funciona?</Text>
+
           <Text style={styles.infoText}>
-            Escolha o serviço, encontre profissionais disponíveis e acompanhe
-            seus agendamentos pelo app.
+            Escolha uma categoria, veja profissionais cadastrados e entre em
+            contato diretamente pelo perfil do profissional.
           </Text>
         </View>
       </ScrollView>
@@ -339,7 +401,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
     paddingTop: 60,
     shadowColor: "#000",
-    shadowOffset: { width: 2, height: 0 },
+    shadowOffset: { width: -2, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
@@ -368,8 +430,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#ccc",
+    backgroundColor: "#0A2F73",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
+  },
+
+  avatarText: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "900",
   },
 
   userName: {
