@@ -17,6 +17,7 @@ import ForgotPassword from "./src/screens/ForgotPassword";
 import FavoritesScreen from "./src/screens/FavoritesScreen";
 import SearchScreen from "./src/screens/SearchScreen";
 import ProfileProfessionalScreen from "./src/screens/ProfileProfessionalScreen";
+import EditProfessionalProfileScreen from "./src/screens/EditProfessionalProfileScreen";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("login");
@@ -24,9 +25,9 @@ export default function App() {
   const [params, setParams] = useState({});
 
   const goTo = (screen, screenParams = {}) => {
-  setCurrentScreen(screen);
-  setParams(screenParams);
-};
+    setCurrentScreen(screen);
+    setParams(screenParams);
+  };
 
   switch (currentScreen) {
     case "login":
@@ -52,20 +53,24 @@ export default function App() {
 
     case "forgotPassword":
       return <ForgotPassword goTo={goTo} />;
-    
+
     case "favoritos":
       return <FavoritesScreen goTo={goTo} />;
 
     case "search":
-      return <SearchScreen goTo={goTo} servico={params.servico} />; 
-    
+      return <SearchScreen goTo={goTo} servico={params.servico} />;
+
+    case "editProfessionalProfile":
+      return <EditProfessionalProfileScreen goTo={goTo} />;
+
     case "professionalProfile":
       return (
-    <ProfileProfessionalScreen
-      goTo={goTo}
-      profissionalId={params.profissionalId}
-    />
-  );
+        <ProfileProfessionalScreen
+          goTo={goTo}
+          profissionalId={params.profissionalId}
+          origem={params.origem}
+        />
+      );
 
     default:
       return <LoginScreen goTo={goTo} />;

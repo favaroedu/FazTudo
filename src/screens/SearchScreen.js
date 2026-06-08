@@ -137,7 +137,10 @@ export default function SearchScreen({ goTo, servico }) {
                   </Text>
 
                   <Text style={styles.rating}>
-                    ⭐ Ainda sem avaliações
+                    ⭐{" "}
+                    {profissional.totalAvaliacoes > 0
+                      ? `${Number(profissional.mediaAvaliacoes).toFixed(1)} (${profissional.totalAvaliacoes})`
+                      : "Ainda sem avaliações"}
                   </Text>
 
                   <Button

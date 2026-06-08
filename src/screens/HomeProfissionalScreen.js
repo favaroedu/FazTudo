@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -10,15 +11,53 @@ import {
   Alert,
 } from "react-native";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../services/firebaseConfig";
+
 import Button from "../components/Button";
 import AppHeader from "../components/AppHeader";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function HomeProfissionalScreen({ goTo }) {
   const [menuAberto, setMenuAberto] = useState(false);
+  const [profissional, setProfissional] = useState(null);
+
   const menuAnim = useRef(new Animated.Value(screenWidth)).current;
+
+  const carregarProfissional = async () => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        setProfissional(userSnap.data());
+      }
+    } catch (error) {
+      console.log("Erro ao carregar profissional:", error);
+    }
+  };
+
+  useEffect(() => {
+    carregarProfissional();
+  }, []);
+
+  const sairDoApp = async () => {
+    try {
+      await signOut(auth);
+      goTo("login");
+    } catch (error) {
+      console.log("Erro ao sair:", error);
+      Alert.alert("Erro", "Não foi possível sair da conta.");
+    }
+  };
 
   const confirmarVoltar = () => {
     Alert.alert(
@@ -26,7 +65,7 @@ export default function HomeProfissionalScreen({ goTo }) {
       "Você deseja sair da página inicial?",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Sim, sair", onPress: () => goTo("login") },
+        { text: "Sim, sair", onPress: sairDoApp },
       ]
     );
   };
@@ -49,11 +88,18 @@ export default function HomeProfissionalScreen({ goTo }) {
     }).start(() => setMenuAberto(false));
   };
 
+  const abrirPerfilPublico = () => {
+    goTo("professionalProfile", {
+      profissionalId: auth.currentUser?.uid,
+      origem: "homeProfissional",
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <AppHeader
         title="Painel Profissional"
-        subtitle="Gerencie seus serviços"
+        subtitle="Gerencie sua presença no FazTudo"
         showBack
         showMenu
         backgroundColor="#0A2F73"
@@ -70,39 +116,45 @@ export default function HomeProfissionalScreen({ goTo }) {
       <Animated.View style={[styles.menuContainer, { right: menuAnim }]}>
         <View style={styles.menuContent}>
           <View style={styles.userInfo}>
-            <View style={styles.avatar} />
-            <Text style={styles.userName}>Olá, Profissional!</Text>
-            <Text style={styles.userEmail}>profissional@email.com</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {profissional?.nome
+                  ? profissional.nome.charAt(0).toUpperCase()
+                  : "P"}
+              </Text>
+            </View>
+
+            <Text style={styles.userName}>
+              Olá,{" "}
+              {profissional?.nome
+                ? profissional.nome.split(" ")[0]
+                : "Profissional"}
+              !
+            </Text>
+
+            <Text style={styles.userEmail}>
+              {profissional?.email || "email não informado"}
+            </Text>
           </View>
 
           <Button
             title="Meu Perfil Profissional"
-            onPress={() => goTo("profile")}
+            onPress={abrirPerfilPublico}
           />
 
           <Button
-            title="Solicitações Recebidas"
-            onPress={() => goTo("solicitacoes")}
+            title="Editar Perfil"
+            onPress={() => goTo("editProfessionalProfile")}
           />
 
           <Button
-            title="Minha Agenda"
-            onPress={() => goTo("agenda")}
+            title="Minhas Avaliações"
+            onPress={() => goTo("professionalReviews")}
           />
 
           <Button
-            title="Meus Serviços"
-            onPress={() => goTo("meusServicos")}
-          />
-
-          <Button
-            title="Avaliações"
-            onPress={() => goTo("avaliacoes")}
-          />
-
-          <Button
-            title="Mensagens"
-            onPress={() => goTo("mensagens")}
+            title="Meu Plano"
+            onPress={() => goTo("professionalPlan")}
           />
 
           <Button
@@ -117,7 +169,7 @@ export default function HomeProfissionalScreen({ goTo }) {
 
           <Button
             title="Sair do aplicativo"
-            onPress={() => goTo("login")}
+            onPress={sairDoApp}
             type="secondary"
           />
 
@@ -134,22 +186,57 @@ export default function HomeProfissionalScreen({ goTo }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Bem-vindo ao seu painel</Text>
+          <Text style={styles.heroTitle}>
+            Bem-vindo ao seu painel
+          </Text>
 
           <Text style={styles.heroSubtitle}>
-            Acompanhe solicitações, gerencie sua agenda e organize seus serviços.
+            Mantenha seu perfil atualizado para ser encontrado por mais clientes.
+          </Text>
+        </View>
+
+        <View style={styles.profileSummaryCard}>
+          <Text style={styles.sectionTitle}>Resumo do perfil</Text>
+
+          <Text style={styles.summaryName}>
+            {profissional?.nome || "Nome não informado"}
+          </Text>
+
+          <Text style={styles.summaryService}>
+            {profissional?.servico || "Área de atuação não informada"}
+          </Text>
+
+          <Text style={styles.summaryLocation}>
+            {profissional?.cidade || "Cidade"} - {profissional?.uf || "UF"}
+          </Text>
+
+          <Text style={styles.summaryRating}>
+            ⭐{" "}
+            {profissional?.totalAvaliacoes > 0
+              ? `${Number(profissional?.mediaAvaliacoes || 0).toFixed(1)} (${
+                  profissional.totalAvaliacoes
+                } avaliação${profissional.totalAvaliacoes > 1 ? "ões" : ""})`
+              : "Ainda sem avaliações"}
           </Text>
         </View>
 
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Solicitações</Text>
+            <Text style={styles.statNumber}>
+              {profissional?.totalAvaliacoes || 0}
+            </Text>
+
+            <Text style={styles.statLabel}>Avaliações</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Agendamentos</Text>
+            <Text style={styles.statNumber}>
+              {profissional?.mediaAvaliacoes
+                ? Number(profissional.mediaAvaliacoes).toFixed(1)
+                : "0.0"}
+            </Text>
+
+            <Text style={styles.statLabel}>Nota média</Text>
           </View>
         </View>
 
@@ -157,19 +244,19 @@ export default function HomeProfissionalScreen({ goTo }) {
           <Text style={styles.sectionTitle}>Ações rápidas</Text>
 
           <Button
-            title="Ver solicitações recebidas"
-            onPress={() => goTo("solicitacoes")}
+            title="Ver meu perfil público"
+            onPress={abrirPerfilPublico}
           />
 
           <Button
-            title="Abrir minha agenda"
-            onPress={() => goTo("agenda")}
+            title="Editar meu perfil"
+            onPress={() => goTo("editProfessionalProfile")}
             type="secondary"
           />
 
           <Button
-            title="Editar meus serviços"
-            onPress={() => goTo("meusServicos")}
+            title="Ver meu plano"
+            onPress={() => goTo("professionalPlan")}
             type="secondary"
           />
         </View>
@@ -178,8 +265,8 @@ export default function HomeProfissionalScreen({ goTo }) {
           <Text style={styles.infoTitle}>Dica para profissionais</Text>
 
           <Text style={styles.infoText}>
-            Mantenha seus dados atualizados para aumentar suas chances de ser
-            encontrado por clientes.
+            Um perfil completo, com descrição clara, contato atualizado e boas
+            avaliações, aumenta suas chances de ser escolhido pelos clientes.
           </Text>
         </View>
       </ScrollView>
@@ -217,6 +304,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     opacity: 0.95,
+  },
+
+  profileSummaryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+
+  summaryName: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 4,
+  },
+
+  summaryService: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ff9100ff",
+    marginBottom: 4,
+  },
+
+  summaryLocation: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 6,
+  },
+
+  summaryRating: {
+    fontSize: 13,
+    color: "#555",
   },
 
   statsGrid: {
@@ -318,8 +439,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#ccc",
+    backgroundColor: "#0A2F73",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
+  },
+
+  avatarText: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "900",
   },
 
   userName: {

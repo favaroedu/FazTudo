@@ -8,24 +8,48 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  TouchableOpacity,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../services/firebaseConfig";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+
+import { auth, db } from "../services/firebaseConfig";
 
 import AppHeader from "../components/AppHeader";
 import Button from "../components/Button";
+import Input from "../components/Input";
 
-export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
+export default function ProfileProfessionalScreen({
+  goTo,
+  profissionalId,
+  origem = "home",
+}) {
   const [profissional, setProfissional] = useState(null);
   const [carregando, setCarregando] = useState(true);
+
+  const [nota, setNota] = useState(0);
+  const [comentario, setComentario] = useState("");
+
+  const [mediaAvaliacoes, setMediaAvaliacoes] = useState(0);
+  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0);
+  const [avaliacoes, setAvaliacoes] = useState([]);
+
+  const visualizacaoProfissional = origem === "homeProfissional";
 
   const carregarProfissional = async () => {
     if (!profissionalId) {
       Alert.alert("Erro", "Profissional não encontrado.");
-      goTo("home");
+      goTo(origem);
       return;
     }
 
@@ -35,7 +59,7 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
 
       if (!profissionalSnap.exists()) {
         Alert.alert("Erro", "Perfil profissional não encontrado.");
-        goTo("home");
+        goTo(origem);
         return;
       }
 
@@ -48,8 +72,55 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
     }
   };
 
+  const carregarAvaliacoes = async () => {
+    try {
+      if (!profissionalId) return;
+
+      const avaliacoesRef = collection(
+        db,
+        "users",
+        profissionalId,
+        "avaliacoes"
+      );
+
+      const avaliacoesSnap = await getDocs(avaliacoesRef);
+
+      let soma = 0;
+      let total = 0;
+      const listaAvaliacoes = [];
+
+      avaliacoesSnap.forEach((documento) => {
+        const avaliacao = documento.data();
+
+        if (avaliacao.nota) {
+          soma += avaliacao.nota;
+          total += 1;
+
+          listaAvaliacoes.push({
+            id: documento.id,
+            ...avaliacao,
+          });
+        }
+      });
+
+      const novaMedia = total > 0 ? soma / total : 0;
+
+      setTotalAvaliacoes(total);
+      setMediaAvaliacoes(novaMedia);
+      setAvaliacoes(listaAvaliacoes);
+
+      await updateDoc(doc(db, "users", profissionalId), {
+        mediaAvaliacoes: novaMedia,
+        totalAvaliacoes: total,
+      });
+    } catch (error) {
+      console.log("Erro ao carregar avaliações:", error);
+    }
+  };
+
   useEffect(() => {
     carregarProfissional();
+    carregarAvaliacoes();
   }, [profissionalId]);
 
   const abrirWhatsApp = () => {
@@ -80,6 +151,89 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
     });
   };
 
+  const adicionarFavorito = async () => {
+    try {
+      const usuario = auth.currentUser;
+
+      if (!usuario) {
+        Alert.alert("Erro", "Você precisa estar logado para favoritar.");
+        return;
+      }
+
+      if (!profissionalId || !profissional) {
+        Alert.alert("Erro", "Profissional não encontrado.");
+        return;
+      }
+
+      await setDoc(
+        doc(db, "users", usuario.uid, "favoritos", profissionalId),
+        {
+          profissionalId,
+          nome: profissional?.nome || "",
+          servico: profissional?.servico || "",
+          cidade: profissional?.cidade || "",
+          uf: profissional?.uf || "",
+          telefone: profissional?.telefone || "",
+          whatsapp: profissional?.whatsapp || "",
+          possuiWhatsapp: profissional?.possuiWhatsapp || false,
+          criadoEm: serverTimestamp(),
+        }
+      );
+
+      Alert.alert("Sucesso", "Profissional adicionado aos favoritos!");
+    } catch (error) {
+      console.log("Erro ao favoritar:", error);
+      Alert.alert("Erro", "Não foi possível adicionar aos favoritos.");
+    }
+  };
+
+  const salvarAvaliacao = async () => {
+    try {
+      const usuario = auth.currentUser;
+
+      if (!usuario) {
+        Alert.alert("Erro", "Você precisa estar logado para avaliar.");
+        return;
+      }
+
+      if (!profissionalId) {
+        Alert.alert("Erro", "Profissional não encontrado.");
+        return;
+      }
+
+      if (nota < 1 || nota > 5) {
+        Alert.alert("Erro", "Selecione uma nota de 1 a 5 estrelas.");
+        return;
+      }
+
+      const usuarioRef = doc(db, "users", usuario.uid);
+      const usuarioSnap = await getDoc(usuarioRef);
+
+      const usuarioNome = usuarioSnap.exists()
+        ? usuarioSnap.data().nome || "Usuário"
+        : "Usuário";
+
+      await setDoc(
+        doc(db, "users", profissionalId, "avaliacoes", usuario.uid),
+        {
+          usuarioId: usuario.uid,
+          usuarioNome,
+          nota,
+          comentario: comentario.trim(),
+          criadoEm: serverTimestamp(),
+        }
+      );
+
+      Alert.alert("Sucesso", "Avaliação registrada com sucesso!");
+
+      setComentario("");
+      await carregarAvaliacoes();
+    } catch (error) {
+      console.log("Erro ao salvar avaliação:", error);
+      Alert.alert("Erro", "Não foi possível salvar sua avaliação.");
+    }
+  };
+
   if (carregando) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -87,7 +241,7 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
           title="Perfil profissional"
           subtitle="Carregando informações"
           showBack
-          onBack={() => goTo("home")}
+          onBack={() => goTo(origem)}
           backgroundColor="#0A2F73"
         />
 
@@ -102,10 +256,14 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <AppHeader
-        title="Perfil profissional"
+        title={
+          visualizacaoProfissional
+            ? "Visualização do Perfil"
+            : "Perfil profissional"
+        }
         subtitle={profissional?.servico || "Profissional"}
         showBack
-        onBack={() => goTo("home")}
+        onBack={() => goTo(origem)}
         backgroundColor="#0A2F73"
       />
 
@@ -113,6 +271,18 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
+        {visualizacaoProfissional && (
+          <View style={styles.previewAlert}>
+            <Text style={styles.previewAlertTitle}>
+              Visualização do seu perfil público
+            </Text>
+
+            <Text style={styles.previewAlertText}>
+              Esta é a forma como os usuários veem suas informações no FazTudo.
+            </Text>
+          </View>
+        )}
+
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -135,7 +305,14 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
             {profissional?.uf || "UF"}
           </Text>
 
-          <Text style={styles.rating}>⭐ Ainda sem avaliações</Text>
+          <Text style={styles.rating}>
+            ⭐{" "}
+            {totalAvaliacoes > 0
+              ? `${mediaAvaliacoes.toFixed(1)} (${totalAvaliacoes} avaliação${
+                  totalAvaliacoes > 1 ? "ões" : ""
+                })`
+              : "Ainda sem avaliações"}
+          </Text>
         </View>
 
         <View style={styles.section}>
@@ -202,22 +379,98 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
           </View>
         </View>
 
-        <Button title="Chamar no WhatsApp" onPress={abrirWhatsApp} />
+        {!visualizacaoProfissional && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Avaliar profissional</Text>
+
+            <View style={styles.ratingBox}>
+              <Text style={styles.ratingHelper}>Selecione uma nota:</Text>
+
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((item) => (
+                  <TouchableOpacity key={item} onPress={() => setNota(item)}>
+                    <Text style={styles.star}>
+                      {item <= nota ? "★" : "☆"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Input
+                placeholder="Comentário sobre o atendimento (opcional)"
+                value={comentario}
+                onChangeText={setComentario}
+                multiline
+              />
+
+              <Text style={styles.helperText}>
+                Você pode avaliar uma vez. Se avaliar novamente, sua avaliação
+                anterior será atualizada.
+              </Text>
+
+              <Button
+                title="Enviar avaliação"
+                onPress={salvarAvaliacao}
+                type="secondary"
+              />
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Avaliações recebidas</Text>
+
+          {avaliacoes.length === 0 ? (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoText}>
+                Este profissional ainda não recebeu avaliações.
+              </Text>
+            </View>
+          ) : (
+            avaliacoes.map((avaliacao) => (
+              <View key={avaliacao.id} style={styles.reviewCard}>
+                <Text style={styles.reviewName}>
+                  {avaliacao.usuarioNome || "Usuário"}
+                </Text>
+
+                <Text style={styles.reviewStars}>
+                  {"★".repeat(avaliacao.nota)}
+                  {"☆".repeat(5 - avaliacao.nota)}
+                </Text>
+
+                {avaliacao.comentario ? (
+                  <Text style={styles.reviewComment}>
+                    {avaliacao.comentario}
+                  </Text>
+                ) : (
+                  <Text style={styles.reviewCommentMuted}>
+                    Sem comentário.
+                  </Text>
+                )}
+              </View>
+            ))
+          )}
+        </View>
+
+        {!visualizacaoProfissional && (
+          <>
+            <Button title="Chamar no WhatsApp" onPress={abrirWhatsApp} />
+
+            <Button
+              title="Adicionar aos favoritos"
+              onPress={adicionarFavorito}
+              type="secondary"
+            />
+          </>
+        )}
 
         <Button
-          title="Adicionar aos favoritos"
-          onPress={() =>
-            Alert.alert(
-              "Favoritos",
-              "Funcionalidade de favoritos será implementada em breve."
-            )
+          title={
+            visualizacaoProfissional
+              ? "Voltar ao painel"
+              : "Voltar para resultados"
           }
-          type="secondary"
-        />
-
-        <Button
-          title="Voltar para resultados"
-          onPress={() => goTo("home")}
+          onPress={() => goTo(origem)}
           type="secondary"
         />
       </ScrollView>
@@ -254,6 +507,28 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 35,
+  },
+
+  previewAlert: {
+    backgroundColor: "#eef4ff",
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#cfe0ff",
+    marginBottom: 16,
+  },
+
+  previewAlertTitle: {
+    color: "#0A2F73",
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+
+  previewAlertText: {
+    color: "#555",
+    fontSize: 13,
+    lineHeight: 18,
   },
 
   profileCard: {
@@ -381,5 +656,72 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     lineHeight: 19,
+  },
+
+  ratingBox: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 14,
+    padding: 14,
+  },
+
+  ratingHelper: {
+    color: "#666",
+    fontSize: 13,
+    marginBottom: 8,
+  },
+
+  starsContainer: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+
+  star: {
+    fontSize: 34,
+    color: "#ff9100ff",
+    marginRight: 6,
+  },
+
+  helperText: {
+    color: "#777",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: -4,
+    marginBottom: 10,
+  },
+
+  reviewCard: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+  },
+
+  reviewName: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#0A2F73",
+    marginBottom: 4,
+  },
+
+  reviewStars: {
+    fontSize: 18,
+    color: "#ff9100ff",
+    marginBottom: 6,
+  },
+
+  reviewComment: {
+    fontSize: 13,
+    color: "#555",
+    lineHeight: 19,
+  },
+
+  reviewCommentMuted: {
+    fontSize: 13,
+    color: "#999",
+    fontStyle: "italic",
   },
 });
