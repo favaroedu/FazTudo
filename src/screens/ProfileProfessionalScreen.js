@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -50,6 +51,34 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
   useEffect(() => {
     carregarProfissional();
   }, [profissionalId]);
+
+  const abrirWhatsApp = () => {
+    const numero = profissional?.whatsapp || profissional?.telefone;
+
+    if (!numero) {
+      Alert.alert(
+        "Contato indisponível",
+        "Este profissional não informou WhatsApp."
+      );
+      return;
+    }
+
+    const numeroLimpo = numero.replace(/\D/g, "");
+
+    const numeroComPais = numeroLimpo.startsWith("55")
+      ? numeroLimpo
+      : `55${numeroLimpo}`;
+
+    const mensagem = encodeURIComponent(
+      "Olá! Encontrei seu perfil no FazTudoApp!"
+    );
+
+    const url = `https://wa.me/${numeroComPais}?text=${mensagem}`;
+
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
+    });
+  };
 
   if (carregando) {
     return (
@@ -114,17 +143,38 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
 
           <View style={styles.infoCard}>
             <Text style={styles.infoText}>
-              Este profissional atua na área de{" "}
-              {profissional?.servico || "serviços residenciais"} e está
-              disponível para atendimento conforme contato informado.
+              {profissional?.sobreMim?.trim()
+                ? profissional.sobreMim
+                : `Este profissional atua na área de ${
+                    profissional?.servico || "serviços residenciais"
+                  } e está disponível para atendimento conforme contato informado.`}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Experiência</Text>
+
+          <InfoItem
+            label="Tempo de experiência"
+            value={profissional?.experiencia || "Não informado"}
+          />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contato</Text>
 
           <InfoItem label="Telefone" value={profissional?.telefone} />
+
+          <InfoItem
+            label="WhatsApp"
+            value={
+              profissional?.possuiWhatsapp
+                ? "Disponível neste número"
+                : "Não informado"
+            }
+          />
+
           <InfoItem label="Email" value={profissional?.email} />
         </View>
 
@@ -152,6 +202,8 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
           </View>
         </View>
 
+        <Button title="Chamar no WhatsApp" onPress={abrirWhatsApp} />
+
         <Button
           title="Adicionar aos favoritos"
           onPress={() =>
@@ -160,6 +212,7 @@ export default function ProfileProfessionalScreen({ goTo, profissionalId }) {
               "Funcionalidade de favoritos será implementada em breve."
             )
           }
+          type="secondary"
         />
 
         <Button

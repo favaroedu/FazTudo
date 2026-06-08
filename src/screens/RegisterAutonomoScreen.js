@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { Picker } from "@react-native-picker/picker";
@@ -34,6 +43,10 @@ export default function RegisterAutonomoScreen({ goTo }) {
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
   const [servico, setServico] = useState("");
+  const [experiencia, setExperiencia] = useState("");
+  const [numeroEhWhatsapp, setNumeroEhWhatsapp] = useState(true);
+  const [sobreMim, setSobreMim] = useState("");
+
   const [enderecoEncontrado, setEnderecoEncontrado] = useState(false);
   const [ultimoCepBuscado, setUltimoCepBuscado] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -147,6 +160,20 @@ export default function RegisterAutonomoScreen({ goTo }) {
     return regex.test(senha);
   };
 
+  const formatarTelefone = (numero) => {
+    const limpo = numero.replace(/\D/g, "");
+
+    if (limpo.length === 11) {
+      return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 7)}-${limpo.slice(7)}`;
+    }
+
+    if (limpo.length === 10) {
+      return `(${limpo.slice(0, 2)}) ${limpo.slice(2, 6)}-${limpo.slice(6)}`;
+    }
+
+    return numero;
+  };
+
   const telefoneLimpo = telefone.replace(/\D/g, "");
   const emailFormatado = email.trim().toLowerCase();
 
@@ -155,6 +182,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
     rg.trim() &&
     cpf.trim() &&
     servico.trim() &&
+    experiencia.trim() &&
     cep.replace(/\D/g, "").length === 8 &&
     enderecoEncontrado &&
     numero.trim() &&
@@ -185,7 +213,7 @@ export default function RegisterAutonomoScreen({ goTo }) {
       const user = userCredential.user;
 
       const enderecoCompleto = `${logradouro}, ${numero} - ${bairro}, ${cidade} - ${estadoExtenso}`;
-      const telefoneCompleto = `(${ddd}) ${telefoneLimpo}`;
+      const telefoneCompleto = formatarTelefone(`${ddd}${telefoneLimpo}`);
 
       const dadosProfissional = {
         uid: user.uid,
@@ -193,7 +221,11 @@ export default function RegisterAutonomoScreen({ goTo }) {
         nome: nome.trim(),
         rg: rg.trim(),
         cpf: cpf.trim(),
+
         servico,
+        experiencia: experiencia.trim(),
+        sobreMim: sobreMim.trim(),
+
         cep: cep.replace(/\D/g, ""),
         endereco: enderecoCompleto,
         logradouro,
@@ -203,7 +235,11 @@ export default function RegisterAutonomoScreen({ goTo }) {
         cidade,
         uf,
         estado: estadoExtenso,
+
         telefone: telefoneCompleto,
+        possuiWhatsapp: numeroEhWhatsapp,
+        whatsapp: numeroEhWhatsapp ? telefoneCompleto : "",
+
         ddd,
         email: emailFormatado,
         criadoEm: serverTimestamp(),
@@ -245,7 +281,6 @@ export default function RegisterAutonomoScreen({ goTo }) {
         onBack={() => goTo("chooseRegister")}
         backgroundColor="#0A2F73"
       />
-
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -291,6 +326,36 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
           <Text style={styles.helperText}>
             Escolha a categoria principal do serviço que você oferece.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Apresentação profissional</Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={experiencia}
+              onValueChange={setExperiencia}
+              style={styles.picker}
+            >
+              <Picker.Item label="Tempo de experiência *" value="" />
+              <Picker.Item label="Menos de 1 ano" value="Menos de 1 ano" />
+              <Picker.Item label="1 a 3 anos" value="1 a 3 anos" />
+              <Picker.Item label="3 a 5 anos" value="3 a 5 anos" />
+              <Picker.Item label="5 a 10 anos" value="5 a 10 anos" />
+              <Picker.Item label="Mais de 10 anos" value="Mais de 10 anos" />
+            </Picker>
+          </View>
+
+          <Input
+            placeholder="Fale um pouco sobre você e seus serviços"
+            value={sobreMim}
+            onChangeText={setSobreMim}
+            multiline
+          />
+
+          <Text style={styles.helperText}>
+            Essas informações aparecerão no seu perfil profissional.
           </Text>
         </View>
 
@@ -388,6 +453,26 @@ export default function RegisterAutonomoScreen({ goTo }) {
             </View>
           </View>
 
+          <TouchableOpacity
+            style={styles.checkboxContainer}
+            onPress={() => setNumeroEhWhatsapp(!numeroEhWhatsapp)}
+          >
+            <View
+              style={[
+                styles.checkbox,
+                numeroEhWhatsapp && styles.checkboxChecked,
+              ]}
+            >
+              {numeroEhWhatsapp && (
+                <Text style={styles.checkboxMark}>✓</Text>
+              )}
+            </View>
+
+            <Text style={styles.checkboxText}>
+              Este número também é WhatsApp
+            </Text>
+          </TouchableOpacity>
+
           <Input
             placeholder="Email *"
             value={email}
@@ -426,18 +511,13 @@ export default function RegisterAutonomoScreen({ goTo }) {
 
         <View style={styles.actions}>
           <Button
-            title={
-              carregando
-                ? "Criando conta..."
-                : "Criar conta profissional"
-            }
+            title={carregando ? "Criando conta..." : "Criar conta profissional"}
             onPress={handleSubmit}
             disabled={!camposValidos || carregando}
           />
-
         </View>
       </ScrollView>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
 
@@ -525,6 +605,39 @@ const styles = StyleSheet.create({
 
   phoneBox: {
     flex: 1,
+  },
+
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: -4,
+    marginBottom: 12,
+  },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#0A2F73",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+
+  checkboxChecked: {
+    backgroundColor: "#0A2F73",
+  },
+
+  checkboxMark: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+
+  checkboxText: {
+    color: "#555",
+    fontSize: 13,
   },
 
   actions: {
