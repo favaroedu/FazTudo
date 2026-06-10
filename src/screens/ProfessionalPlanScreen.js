@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +16,7 @@ import { auth, db } from "../services/firebaseConfig";
 
 import AppHeader from "../components/AppHeader";
 import Button from "../components/Button";
+import seloPremium from "../../assets/selopremium.png";
 
 export default function ProfessionalPlanScreen({ goTo }) {
   const [plano, setPlano] = useState("gratuito");
@@ -90,9 +92,18 @@ export default function ProfessionalPlanScreen({ goTo }) {
         <View style={styles.currentPlanCard}>
           <Text style={styles.cardLabel}>Plano atual</Text>
 
-          <Text style={styles.currentPlanTitle}>
-            {planoProfissionalAtivo ? "Profissional" : "Gratuito"}
-          </Text>
+          <View style={styles.currentPlanRow}>
+            <Text style={styles.currentPlanTitle}>
+              {planoProfissionalAtivo ? "Profissional" : "Gratuito"}
+            </Text>
+
+            {planoProfissionalAtivo && (
+              <Image
+                source={seloPremium}
+                style={styles.premiumBadge}
+              />
+            )}
+          </View>
 
           <Text style={styles.statusText}>
             Status: {statusPlano === "ativo" ? "Ativo" : "Inativo"}
@@ -263,5 +274,18 @@ const styles = StyleSheet.create({
     color: "#555",
     fontSize: 13,
     lineHeight: 19,
+  },
+
+  currentPlanRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+
+  premiumBadge: {
+    width: 24,
+    height: 24,
+    marginLeft: 8,
+    resizeMode: "contain",
   },
 });
