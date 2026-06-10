@@ -18,6 +18,8 @@ import FavoritesScreen from "./src/screens/FavoritesScreen";
 import SearchScreen from "./src/screens/SearchScreen";
 import ProfileProfessionalScreen from "./src/screens/ProfileProfessionalScreen";
 import EditProfessionalProfileScreen from "./src/screens/EditProfessionalProfileScreen";
+import ProfessionalReviewsScreen from "./src/screens/ProfessionalReviewsScreen";
+import ProfessionalPlanScreen from "./src/screens/ProfessionalPlanScreen";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("login");
@@ -63,6 +65,12 @@ export default function App() {
     case "editProfessionalProfile":
       return <EditProfessionalProfileScreen goTo={goTo} />;
 
+    case "professionalReviews":
+      return <ProfessionalReviewsScreen goTo={goTo} />;
+
+    case "professionalPlan":
+      return <ProfessionalPlanScreen goTo={goTo} />;
+      
     case "professionalProfile":
       return (
         <ProfileProfessionalScreen

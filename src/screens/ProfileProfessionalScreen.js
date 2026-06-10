@@ -28,6 +28,9 @@ import { auth, db } from "../services/firebaseConfig";
 import AppHeader from "../components/AppHeader";
 import Button from "../components/Button";
 import Input from "../components/Input";
+import { Image } from "react-native";
+
+import seloPremium from "../../assets/selopremium.png";
 
 export default function ProfileProfessionalScreen({
   goTo,
@@ -292,9 +295,18 @@ export default function ProfileProfessionalScreen({
             </Text>
           </View>
 
-          <Text style={styles.name}>
-            {profissional?.nome || "Nome não informado"}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>
+              {profissional?.nome || "Nome não informado"}
+            </Text>
+
+            {profissional?.plano === "profissional" && (
+              <Image
+                source={seloPremium}
+                style={styles.premiumBadge}
+              />
+            )}
+          </View>
 
           <Text style={styles.service}>
             {profissional?.servico || "Serviço não informado"}
@@ -308,9 +320,8 @@ export default function ProfileProfessionalScreen({
           <Text style={styles.rating}>
             ⭐{" "}
             {totalAvaliacoes > 0
-              ? `${mediaAvaliacoes.toFixed(1)} (${totalAvaliacoes} avaliação${
-                  totalAvaliacoes > 1 ? "ões" : ""
-                })`
+              ? `${mediaAvaliacoes.toFixed(1)} (${totalAvaliacoes} avaliação${totalAvaliacoes > 1 ? "ões" : ""
+              })`
               : "Ainda sem avaliações"}
           </Text>
         </View>
@@ -322,9 +333,8 @@ export default function ProfileProfessionalScreen({
             <Text style={styles.infoText}>
               {profissional?.sobreMim?.trim()
                 ? profissional.sobreMim
-                : `Este profissional atua na área de ${
-                    profissional?.servico || "serviços residenciais"
-                  } e está disponível para atendimento conforme contato informado.`}
+                : `Este profissional atua na área de ${profissional?.servico || "serviços residenciais"
+                } e está disponível para atendimento conforme contato informado.`}
             </Text>
           </View>
         </View>
@@ -563,6 +573,20 @@ const styles = StyleSheet.create({
     color: "#0A2F73",
     textAlign: "center",
     marginBottom: 4,
+  },
+
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+
+  premiumBadge: {
+    width: 20,
+    height: 20,
+    marginLeft: 8,
+    resizeMode: "contain",
   },
 
   service: {

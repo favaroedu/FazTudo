@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +20,7 @@ import { auth, db } from "../services/firebaseConfig";
 
 import Button from "../components/Button";
 import AppHeader from "../components/AppHeader";
+import seloPremium from "../../assets/selopremium.png";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -198,9 +200,18 @@ export default function HomeProfissionalScreen({ goTo }) {
         <View style={styles.profileSummaryCard}>
           <Text style={styles.sectionTitle}>Resumo do perfil</Text>
 
-          <Text style={styles.summaryName}>
-            {profissional?.nome || "Nome não informado"}
-          </Text>
+          <View style={styles.summaryNameRow}>
+            <Text style={styles.summaryName}>
+              {profissional?.nome || "Nome não informado"}
+            </Text>
+
+            {profissional?.plano === "profissional" && (
+              <Image
+                source={seloPremium}
+                style={styles.premiumBadge}
+              />
+            )}
+          </View>
 
           <Text style={styles.summaryService}>
             {profissional?.servico || "Área de atuação não informada"}
@@ -213,9 +224,8 @@ export default function HomeProfissionalScreen({ goTo }) {
           <Text style={styles.summaryRating}>
             ⭐{" "}
             {profissional?.totalAvaliacoes > 0
-              ? `${Number(profissional?.mediaAvaliacoes || 0).toFixed(1)} (${
-                  profissional.totalAvaliacoes
-                } avaliação${profissional.totalAvaliacoes > 1 ? "ões" : ""})`
+              ? `${Number(profissional?.mediaAvaliacoes || 0).toFixed(1)} (${profissional.totalAvaliacoes
+              } avaliação${profissional.totalAvaliacoes > 1 ? "ões" : ""})`
               : "Ainda sem avaliações"}
           </Text>
         </View>
@@ -460,5 +470,18 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: "#666",
+  },
+
+  summaryNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
+  premiumBadge: {
+    width: 22,
+    height: 22,
+    marginLeft: 6,
+    resizeMode: "contain",
   },
 });
