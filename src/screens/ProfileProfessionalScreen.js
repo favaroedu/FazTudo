@@ -391,75 +391,30 @@ export default function ProfileProfessionalScreen({
 
         {!visualizacaoProfissional && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Avaliar profissional</Text>
 
-            <View style={styles.ratingBox}>
-              <Text style={styles.ratingHelper}>Selecione uma nota:</Text>
 
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((item) => (
-                  <TouchableOpacity key={item} onPress={() => setNota(item)}>
-                    <Text style={styles.star}>
-                      {item <= nota ? "★" : "☆"}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Input
-                placeholder="Comentário sobre o atendimento (opcional)"
-                value={comentario}
-                onChangeText={setComentario}
-                multiline
-              />
-
-              <Text style={styles.helperText}>
-                Você pode avaliar uma vez. Se avaliar novamente, sua avaliação
-                anterior será atualizada.
-              </Text>
-
-              <Button
-                title="Enviar avaliação"
-                onPress={salvarAvaliacao}
-                type="secondary"
-              />
-            </View>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Avaliações recebidas</Text>
+          <Text style={styles.sectionTitle}>Avaliações</Text>
 
-          {avaliacoes.length === 0 ? (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoText}>
-                Este profissional ainda não recebeu avaliações.
-              </Text>
-            </View>
-          ) : (
-            avaliacoes.map((avaliacao) => (
-              <View key={avaliacao.id} style={styles.reviewCard}>
-                <Text style={styles.reviewName}>
-                  {avaliacao.usuarioNome || "Usuário"}
-                </Text>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoText}>
+              As avaliações deste profissional são verificadas após a conclusão dos serviços.
+            </Text>
 
-                <Text style={styles.reviewStars}>
-                  {"★".repeat(avaliacao.nota)}
-                  {"☆".repeat(5 - avaliacao.nota)}
-                </Text>
-
-                {avaliacao.comentario ? (
-                  <Text style={styles.reviewComment}>
-                    {avaliacao.comentario}
-                  </Text>
-                ) : (
-                  <Text style={styles.reviewCommentMuted}>
-                    Sem comentário.
-                  </Text>
-                )}
-              </View>
-            ))
-          )}
+            <Text
+              style={{
+                marginTop: 10,
+                fontWeight: "bold",
+                fontSize: 16,
+                textAlign: "center",
+              }}
+            >
+              ⭐ {mediaAvaliacoes.toFixed(1)} ({totalAvaliacoes} avaliações)
+            </Text>
+          </View>
         </View>
 
         {!visualizacaoProfissional && (
