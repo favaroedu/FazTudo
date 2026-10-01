@@ -239,8 +239,8 @@ export default function HomeProfissionalScreen({ goTo }) {
             />
 
             <Button
-              title="Meus Serviços"
-              onPress={() => navegarMenu("meusServicos")}
+              title="Histórico"
+              onPress={() => navegarMenu("historico")}
             />
 
             {/* ========================================== */}
@@ -257,11 +257,6 @@ export default function HomeProfissionalScreen({ goTo }) {
                 navegarMenu("professionalReviews")
               }
             />
-
-            {/*
-              QR Code de Avaliação será adicionado
-              posteriormente.
-            */}
 
             {/* ========================================== */}
             {/* ⚙️ OUTROS */}
@@ -404,33 +399,19 @@ export default function HomeProfissionalScreen({ goTo }) {
         </View>
 
         {/* ========================================== */}
-        {/* AÇÕES RÁPIDAS */}
+        {/* QR CODE DE AVALIAÇÃO */}
         {/* ========================================== */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Ações rápidas
+            QR Code de Avaliação
           </Text>
 
           <Button
-            title="Ver meu perfil público"
-            onPress={abrirPerfilPublico}
-          />
-
-          <Button
-            title="Editar meu perfil"
+            title="📱 Gerar QR Code de Avaliação"
             onPress={() =>
-              goTo("editProfessionalProfile")
+              goTo("qrCodeAvaliacao")
             }
-            type="secondary"
-          />
-
-          <Button
-            title="Ver minhas avaliações"
-            onPress={() =>
-              goTo("professionalReviews")
-            }
-            type="secondary"
           />
         </View>
 

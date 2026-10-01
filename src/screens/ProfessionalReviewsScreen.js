@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import {
   View,
@@ -10,7 +10,13 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from "firebase/firestore";
+
 import { auth, db } from "../services/firebaseConfig";
 
 import AppHeader from "../components/AppHeader";
@@ -21,11 +27,18 @@ export default function ProfessionalReviewsScreen({ goTo }) {
   const [media, setMedia] = useState(0);
   const [carregando, setCarregando] = useState(true);
 
-  const carregarAvaliacoes = async () => {
+  const carregarAvaliacoes = useCallback(async () => {
     try {
+      setCarregando(true);
+
       const user = auth.currentUser;
 
-      if (!user) return;
+      if (!user) {
+        setAvaliacoes([]);
+        setMedia(0);
+        goTo("login");
+        return;
+      }
 
       const avaliacoesRef = collection(
         db,
@@ -34,38 +47,106 @@ export default function ProfessionalReviewsScreen({ goTo }) {
         "avaliacoes"
       );
 
-      const avaliacoesSnap = await getDocs(avaliacoesRef);
+      let avaliacoesSnap;
 
-      let soma = 0;
-      let total = 0;
+      try {
+        const avaliacoesQuery = query(
+          avaliacoesRef,
+          orderBy("criadoEm", "desc")
+        );
+
+        avaliacoesSnap = await getDocs(avaliacoesQuery);
+      } catch (error) {
+        /*
+          Caso alguma avaliação antiga não possua criadoEm,
+          fazemos uma segunda tentativa sem orderBy.
+        */
+        console.log(
+          "Não foi possível ordenar por criadoEm. Carregando sem ordenação:",
+          error
+        );
+
+        avaliacoesSnap = await getDocs(avaliacoesRef);
+      }
+
       const lista = [];
 
       avaliacoesSnap.forEach((documento) => {
-        const avaliacao = documento.data();
+        const dados = documento.data();
 
-        if (avaliacao.nota) {
-          soma += avaliacao.nota;
-          total += 1;
+        const notaNumerica = Number(dados.nota);
 
+        if (
+          Number.isFinite(notaNumerica) &&
+          notaNumerica >= 1 &&
+          notaNumerica <= 5
+        ) {
           lista.push({
             id: documento.id,
-            ...avaliacao,
+            ...dados,
+            nota: notaNumerica,
           });
         }
       });
 
+      /*
+        Se a busca precisou ser feita sem orderBy,
+        garantimos uma ordenação local pelas datas.
+      */
+      lista.sort((a, b) => {
+        const dataA = obterTimestamp(a.criadoEm);
+        const dataB = obterTimestamp(b.criadoEm);
+
+        return dataB - dataA;
+      });
+
+      const soma = lista.reduce(
+        (total, avaliacao) => total + avaliacao.nota,
+        0
+      );
+
+      const mediaCalculada =
+        lista.length > 0 ? soma / lista.length : 0;
+
       setAvaliacoes(lista);
-      setMedia(total > 0 ? soma / total : 0);
+      setMedia(mediaCalculada);
     } catch (error) {
       console.log("Erro ao carregar avaliações:", error);
+
+      setAvaliacoes([]);
+      setMedia(0);
     } finally {
       setCarregando(false);
     }
-  };
+  }, [goTo]);
 
   useEffect(() => {
     carregarAvaliacoes();
-  }, []);
+  }, [carregarAvaliacoes]);
+
+  const formatarData = (criadoEm) => {
+    if (!criadoEm) {
+      return "";
+    }
+
+    let data;
+
+    if (criadoEm?.toDate) {
+      data = criadoEm.toDate();
+    } else if (criadoEm instanceof Date) {
+      data = criadoEm;
+    } else if (typeof criadoEm === "string") {
+      data = new Date(criadoEm);
+    } else if (criadoEm?.seconds) {
+      data = new Date(criadoEm.seconds * 1000);
+    }
+
+    if (!data || Number.isNaN(data.getTime())) {
+      return "";
+    }
+
+    return data.toLocaleDateString("pt-BR");
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -80,7 +161,10 @@ export default function ProfessionalReviewsScreen({ goTo }) {
       {carregando ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0A2F73" />
-          <Text style={styles.loadingText}>Carregando avaliações...</Text>
+
+          <Text style={styles.loadingText}>
+            Carregando avaliações...
+          </Text>
         </View>
       ) : (
         <ScrollView
@@ -88,7 +172,9 @@ export default function ProfessionalReviewsScreen({ goTo }) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Média geral</Text>
+            <Text style={styles.summaryTitle}>
+              Média geral
+            </Text>
 
             <Text style={styles.summaryRating}>
               ⭐ {avaliacoes.length > 0 ? media.toFixed(1) : "0.0"}
@@ -110,8 +196,8 @@ export default function ProfessionalReviewsScreen({ goTo }) {
               </Text>
 
               <Text style={styles.emptyText}>
-                Quando usuários avaliarem seu atendimento, os comentários
-                aparecerão aqui.
+                Quando usuários avaliarem seu atendimento,
+                os comentários aparecerão aqui.
               </Text>
 
               <Button
@@ -125,34 +211,87 @@ export default function ProfessionalReviewsScreen({ goTo }) {
                 Avaliações recebidas
               </Text>
 
-              {avaliacoes.map((avaliacao) => (
-                <View key={avaliacao.id} style={styles.reviewCard}>
-                  <Text style={styles.reviewName}>
-                    {avaliacao.usuarioNome || "Usuário"}
-                  </Text>
+              {avaliacoes.map((avaliacao) => {
+                const dataFormatada = formatarData(
+                  avaliacao.criadoEm
+                );
 
-                  <Text style={styles.reviewStars}>
-                    {"★".repeat(avaliacao.nota)}
-                    {"☆".repeat(5 - avaliacao.nota)}
-                  </Text>
+                return (
+                  <View
+                    key={avaliacao.id}
+                    style={styles.reviewCard}
+                  >
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewName}>
+                        {avaliacao.usuarioNome || "Usuário"}
+                      </Text>
 
-                  {avaliacao.comentario ? (
-                    <Text style={styles.reviewComment}>
-                      {avaliacao.comentario}
+                      {dataFormatada ? (
+                        <Text style={styles.reviewDate}>
+                          {dataFormatada}
+                        </Text>
+                      ) : null}
+                    </View>
+
+                    <Text style={styles.reviewStars}>
+                      {"★".repeat(avaliacao.nota)}
+                      {"☆".repeat(5 - avaliacao.nota)}
                     </Text>
-                  ) : (
-                    <Text style={styles.reviewCommentMuted}>
-                      Sem comentário.
-                    </Text>
-                  )}
-                </View>
-              ))}
+
+                    {avaliacao.comentario ? (
+                      <Text style={styles.reviewComment}>
+                        {avaliacao.comentario}
+                      </Text>
+                    ) : (
+                      <Text style={styles.reviewCommentMuted}>
+                        Sem comentário.
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </>
           )}
         </ScrollView>
       )}
     </SafeAreaView>
   );
+}
+
+/*
+  Converte diferentes formatos possíveis de timestamp
+  do Firestore para milissegundos.
+*/
+function obterTimestamp(valor) {
+  if (!valor) {
+    return 0;
+  }
+
+  if (valor?.toDate) {
+    const data = valor.toDate();
+
+    return data instanceof Date
+      ? data.getTime()
+      : 0;
+  }
+
+  if (valor instanceof Date) {
+    return valor.getTime();
+  }
+
+  if (valor?.seconds) {
+    return valor.seconds * 1000;
+  }
+
+  if (typeof valor === "string") {
+    const data = new Date(valor);
+
+    return Number.isNaN(data.getTime())
+      ? 0
+      : data.getTime();
+  }
+
+  return 0;
 }
 
 const styles = StyleSheet.create({
@@ -218,7 +357,7 @@ const styles = StyleSheet.create({
 
   emptyIcon: {
     fontSize: 48,
-    color: "#ff9100ff",
+    color: "#ff9100",
     marginBottom: 10,
   },
 
@@ -254,16 +393,29 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
   reviewName: {
+    flex: 1,
     fontSize: 14,
     fontWeight: "800",
     color: "#0A2F73",
-    marginBottom: 4,
+  },
+
+  reviewDate: {
+    fontSize: 11,
+    color: "#999",
+    marginLeft: 10,
   },
 
   reviewStars: {
     fontSize: 18,
-    color: "#ff9100ff",
+    color: "#ff9100",
     marginBottom: 6,
   },
 

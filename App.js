@@ -21,6 +21,10 @@ import EditProfessionalProfileScreen from "./src/screens/EditProfessionalProfile
 import ProfessionalReviewsScreen from "./src/screens/ProfessionalReviewsScreen";
 import ProfessionalPlanScreen from "./src/screens/ProfessionalPlanScreen";
 import AgendaScreen from "./src/screens/AgendaScreen";
+import HistoricoScreen from "./src/screens/HistoricoScreen";
+import ConfiguracoesScreen from "./src/screens/ConfiguracoesScreen"; 
+import SuporteScreen from "./src/screens/SuporteScreen"; 
+import QRCodeAvaliacaoScreen from "./src/screens/QRCodeAvaliacaoScreen";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("login");
@@ -53,6 +57,18 @@ export default function App() {
 
     case "agenda":
       return <AgendaScreen goTo={goTo} />;  
+
+    case "historico":
+      return <HistoricoScreen goTo={goTo} />;
+
+    case "configuracoes":
+      return <ConfiguracoesScreen goTo={goTo} />;
+
+    case "suporte":
+      return <SuporteScreen goTo={goTo} />; 
+      
+    case "qrCodeAvaliacao":
+      return <QRCodeAvaliacaoScreen goTo={goTo} />;  
 
     case "profile":
       return <ProfileScreen goTo={goTo} />;

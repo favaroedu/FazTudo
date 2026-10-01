@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Linking,
   TouchableOpacity,
 } from "react-native";
 
@@ -28,24 +27,21 @@ import AppHeader from "../components/AppHeader";
 import Button from "../components/Button";
 import Input from "../components/Input";
 
-export default function AgendaScreen({ goTo }) {
+export default function HistoricoScreen({ goTo }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
-  const [compromissos, setCompromissos] = useState([]);
+  const [historicos, setHistoricos] = useState([]);
 
   const [cliente, setCliente] = useState("");
   const [servico, setServico] = useState("");
   const [data, setData] = useState("");
-  const [horario, setHorario] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
+  const [valor, setValor] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
   const [editandoId, setEditandoId] = useState(null);
 
   // ==========================================
-  // CARREGAR AGENDA DO FIREBASE
+  // CARREGAR HISTÓRICO DO FIREBASE
   // ==========================================
 
   useEffect(() => {
@@ -54,7 +50,7 @@ export default function AgendaScreen({ goTo }) {
     if (!usuario) {
       Alert.alert(
         "Sessão não encontrada",
-        "Faça login novamente para acessar sua agenda."
+        "Faça login novamente para acessar seu histórico."
       );
 
       goTo("login");
@@ -62,15 +58,15 @@ export default function AgendaScreen({ goTo }) {
       return;
     }
 
-    const agendaRef = collection(
+    const historicoRef = collection(
       db,
       "users",
       usuario.uid,
-      "agenda"
+      "historico"
     );
 
     const unsubscribe = onSnapshot(
-      agendaRef,
+      historicoRef,
       (snapshot) => {
         const lista = snapshot.docs.map((documento) => ({
           id: documento.id,
@@ -90,17 +86,17 @@ export default function AgendaScreen({ goTo }) {
           return tempoB - tempoA;
         });
 
-        setCompromissos(lista);
+        setHistoricos(lista);
       },
       (error) => {
         console.log(
-          "Erro ao carregar agenda:",
+          "Erro ao carregar histórico:",
           error
         );
 
         Alert.alert(
           "Erro",
-          "Não foi possível carregar sua agenda."
+          "Não foi possível carregar seu histórico."
         );
       }
     );
@@ -116,10 +112,7 @@ export default function AgendaScreen({ goTo }) {
     setCliente("");
     setServico("");
     setData("");
-    setHorario("");
-    setEndereco("");
-    setNumero("");
-    setComplemento("");
+    setValor("");
     setObservacoes("");
     setEditandoId(null);
   };
@@ -154,22 +147,29 @@ export default function AgendaScreen({ goTo }) {
   };
 
   // ==========================================
-  // FORMATAÇÃO DO HORÁRIO
+  // FORMATAÇÃO DO VALOR
   // ==========================================
 
-  const formatarHorario = (texto) => {
-    const apenasNumeros = texto
-      .replace(/\D/g, "")
-      .slice(0, 4);
+  const formatarValor = (texto) => {
+    const apenasNumeros = texto.replace(
+      /\D/g,
+      ""
+    );
 
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros;
+    if (!apenasNumeros) {
+      return "";
     }
 
-    return `${apenasNumeros.slice(
-      0,
-      2
-    )}:${apenasNumeros.slice(2)}`;
+    const valorNumerico =
+      parseInt(apenasNumeros, 10) / 100;
+
+    return valorNumerico.toLocaleString(
+      "pt-BR",
+      {
+        style: "currency",
+        currency: "BRL",
+      }
+    );
   };
 
   // ==========================================
@@ -191,10 +191,10 @@ export default function AgendaScreen({ goTo }) {
   };
 
   // ==========================================
-  // SALVAR COMPROMISSO
+  // SALVAR HISTÓRICO
   // ==========================================
 
-  const salvarCompromisso = async () => {
+  const salvarHistorico = async () => {
     if (!cliente.trim()) {
       Alert.alert(
         "Atenção",
@@ -206,7 +206,7 @@ export default function AgendaScreen({ goTo }) {
     if (!servico.trim()) {
       Alert.alert(
         "Atenção",
-        "Informe o serviço."
+        "Informe o serviço realizado."
       );
       return;
     }
@@ -219,10 +219,10 @@ export default function AgendaScreen({ goTo }) {
       return;
     }
 
-    if (!horario.trim()) {
+    if (!valor.trim()) {
       Alert.alert(
         "Atenção",
-        "Informe o horário."
+        "Informe o valor recebido."
       );
       return;
     }
@@ -240,52 +240,59 @@ export default function AgendaScreen({ goTo }) {
       return;
     }
 
-    const dadosCompromisso = {
+    const dadosHistorico = {
       cliente: cliente.trim(),
       servico: servico.trim(),
       data: data.trim(),
-      horario: horario.trim(),
-      endereco: endereco.trim(),
-      numero: numero.trim(),
-      complemento: complemento.trim(),
+      valor: valor.trim(),
       observacoes: observacoes.trim(),
     };
 
     try {
+      // ==========================================
+      // EDITAR
+      // ==========================================
+
       if (editandoId) {
-        const compromissoRef = doc(
+        const historicoRef = doc(
           db,
           "users",
           usuario.uid,
-          "agenda",
+          "historico",
           editandoId
         );
 
         await updateDoc(
-          compromissoRef,
-          dadosCompromisso
+          historicoRef,
+          dadosHistorico
         );
 
         Alert.alert(
           "Sucesso",
-          "Compromisso atualizado com sucesso!"
+          "Registro atualizado com sucesso!"
         );
-      } else {
-        const agendaRef = collection(
+      }
+
+      // ==========================================
+      // NOVO REGISTRO
+      // ==========================================
+
+      else {
+        const historicoRef = collection(
           db,
           "users",
           usuario.uid,
-          "agenda"
+          "historico"
         );
 
-        await addDoc(agendaRef, {
-          ...dadosCompromisso,
+        await addDoc(historicoRef, {
+          ...dadosHistorico,
           criadoEm: serverTimestamp(),
         });
 
         Alert.alert(
           "Sucesso",
-          "Compromisso adicionado à sua agenda!"
+          "Serviço adicionado ao histórico!"
         );
       }
 
@@ -293,29 +300,29 @@ export default function AgendaScreen({ goTo }) {
       setMostrarFormulario(false);
     } catch (error) {
       console.log(
-        "Erro ao salvar compromisso:",
+        "Erro ao salvar histórico:",
         error
       );
 
       Alert.alert(
-        "Erro",
-        "Não foi possível salvar o compromisso. Tente novamente."
+        "Erro ao salvar",
+        `${error.code || "sem código"}\n\n${
+          error.message ||
+          "Não foi possível salvar o registro."
+        }`
       );
     }
   };
 
   // ==========================================
-  // EDITAR COMPROMISSO
+  // EDITAR HISTÓRICO
   // ==========================================
 
-  const editarCompromisso = (item) => {
+  const editarHistorico = (item) => {
     setCliente(item.cliente || "");
     setServico(item.servico || "");
     setData(item.data || "");
-    setHorario(item.horario || "");
-    setEndereco(item.endereco || "");
-    setNumero(item.numero || "");
-    setComplemento(item.complemento || "");
+    setValor(item.valor || "");
     setObservacoes(item.observacoes || "");
 
     setEditandoId(item.id);
@@ -323,13 +330,13 @@ export default function AgendaScreen({ goTo }) {
   };
 
   // ==========================================
-  // EXCLUIR COMPROMISSO
+  // EXCLUIR HISTÓRICO
   // ==========================================
 
-  const excluirCompromisso = (id) => {
+  const excluirHistorico = (id) => {
     Alert.alert(
-      "Excluir compromisso?",
-      "Esse compromisso será removido da sua agenda.",
+      "Excluir registro?",
+      "Este serviço será removido do seu histórico.",
       [
         {
           text: "Cancelar",
@@ -338,6 +345,7 @@ export default function AgendaScreen({ goTo }) {
         {
           text: "Excluir",
           style: "destructive",
+
           onPress: async () => {
             const usuario = auth.currentUser;
 
@@ -353,29 +361,29 @@ export default function AgendaScreen({ goTo }) {
             }
 
             try {
-              const compromissoRef = doc(
+              const historicoRef = doc(
                 db,
                 "users",
                 usuario.uid,
-                "agenda",
+                "historico",
                 id
               );
 
-              await deleteDoc(compromissoRef);
+              await deleteDoc(historicoRef);
 
               Alert.alert(
                 "Sucesso",
-                "Compromisso excluído com sucesso!"
+                "Registro excluído com sucesso!"
               );
             } catch (error) {
               console.log(
-                "Erro ao excluir compromisso:",
+                "Erro ao excluir histórico:",
                 error
               );
 
               Alert.alert(
                 "Erro",
-                "Não foi possível excluir o compromisso."
+                "Não foi possível excluir o registro."
               );
             }
           },
@@ -385,71 +393,38 @@ export default function AgendaScreen({ goTo }) {
   };
 
   // ==========================================
-  // ABRIR NAVEGAÇÃO
+  // TOTAL RECEBIDO
   // ==========================================
 
-  const abrirNavegacao = async (item) => {
-    if (!item.endereco) {
-      Alert.alert(
-        "Endereço não informado",
-        "Este compromisso não possui um endereço cadastrado."
+  const calcularTotal = () => {
+    return historicos.reduce((total, item) => {
+      const valorNumerico = parseFloat(
+        String(item.valor || "")
+          .replace("R$", "")
+          .replace(/\./g, "")
+          .replace(",", ".")
+          .trim()
       );
 
-      return;
-    }
+      return (
+        total +
+        (isNaN(valorNumerico)
+          ? 0
+          : valorNumerico)
+      );
+    }, 0);
+  };
 
-    const enderecoCompleto = [
-      item.endereco,
-      item.numero,
-      item.complemento,
-    ]
-      .filter(Boolean)
-      .join(", ");
+  const totalRecebido = calcularTotal();
 
-    const url =
-      `https://www.google.com/maps/search/?api=1&query=` +
-      encodeURIComponent(enderecoCompleto);
-
-    try {
-      const podeAbrir =
-        await Linking.canOpenURL(url);
-
-      if (podeAbrir) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(
-          "Erro",
-          "Não foi possível abrir o aplicativo de mapas."
-        );
+  const totalFormatado =
+    totalRecebido.toLocaleString(
+      "pt-BR",
+      {
+        style: "currency",
+        currency: "BRL",
       }
-    } catch (error) {
-      console.log(
-        "Erro ao abrir navegação:",
-        error
-      );
-
-      Alert.alert(
-        "Erro",
-        "Não foi possível abrir a localização."
-      );
-    }
-  };
-
-  // ==========================================
-  // FORMATAÇÃO DO ENDEREÇO
-  // ==========================================
-
-  const montarEndereco = (item) => {
-    const partes = [
-      item.endereco,
-      item.numero,
-      item.complemento,
-    ].filter(Boolean);
-
-    return partes.length > 0
-      ? partes.join(", ")
-      : "Endereço não informado";
-  };
+    );
 
   // ==========================================
   // RENDER
@@ -458,8 +433,8 @@ export default function AgendaScreen({ goTo }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <AppHeader
-        title="Minha Agenda"
-        subtitle="Organize seus atendimentos"
+        title="Histórico"
+        subtitle="Controle seus serviços realizados"
         showBack
         onBack={() => goTo("homeProfissional")}
         backgroundColor="#0A2F73"
@@ -472,86 +447,132 @@ export default function AgendaScreen({ goTo }) {
         {!mostrarFormulario ? (
           <>
             {/* ========================================== */}
-            {/* CABEÇALHO DA AGENDA */}
+            {/* CABEÇALHO */}
             {/* ========================================== */}
 
             <View style={styles.introCard}>
               <Text style={styles.introTitle}>
-                Organize seus compromissos
+                Serviços realizados
               </Text>
 
               <Text style={styles.introText}>
-                Cadastre seus atendimentos e tenha as informações
-                dos seus clientes sempre à mão.
+                Registre os serviços que você já
+                realizou para manter seu histórico
+                organizado.
               </Text>
             </View>
+
+            {/* ========================================== */}
+            {/* RESUMO */}
+            {/* ========================================== */}
+
+            {historicos.length > 0 ? (
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryItem}>
+                  <Text
+                    style={styles.summaryNumber}
+                  >
+                    {historicos.length}
+                  </Text>
+
+                  <Text
+                    style={styles.summaryLabel}
+                  >
+                    {historicos.length === 1
+                      ? "Serviço realizado"
+                      : "Serviços realizados"}
+                  </Text>
+                </View>
+
+                <View
+                  style={styles.summaryDivider}
+                />
+
+                <View style={styles.summaryItem}>
+                  <Text
+                    style={styles.summaryValue}
+                  >
+                    {totalFormatado}
+                  </Text>
+
+                  <Text
+                    style={styles.summaryLabel}
+                  >
+                    Total recebido
+                  </Text>
+                </View>
+              </View>
+            ) : null}
 
             {/* ========================================== */}
             {/* BOTÃO ADICIONAR */}
             {/* ========================================== */}
 
             <Button
-              title="+ Adicionar compromisso"
+              title="+ Adicionar serviço realizado"
               onPress={abrirFormulario}
             />
 
             {/* ========================================== */}
-            {/* LISTA DE COMPROMISSOS */}
+            {/* LISTA */}
             {/* ========================================== */}
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                Meus compromissos
+                Meu histórico
               </Text>
 
-              {compromissos.length === 0 ? (
+              {historicos.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyIcon}>
-                    📅
+                    📋
                   </Text>
 
                   <Text style={styles.emptyTitle}>
-                    Sua agenda está vazia
+                    Seu histórico está vazio
                   </Text>
 
                   <Text style={styles.emptyText}>
-                    Adicione seu primeiro compromisso para começar
-                    a organizar seus atendimentos.
+                    Adicione seu primeiro serviço
+                    realizado para começar a registrar
+                    seu histórico.
                   </Text>
                 </View>
               ) : (
-                compromissos.map((item) => (
+                historicos.map((item) => (
                   <View
                     key={item.id}
-                    style={styles.appointmentCard}
+                    style={styles.historyCard}
                   >
-                    {/* DATA E HORÁRIO */}
+                    {/* DATA */}
 
                     <View style={styles.dateBox}>
                       <Text style={styles.dateText}>
                         {item.data}
-                      </Text>
-
-                      <Text style={styles.timeText}>
-                        {item.horario}
                       </Text>
                     </View>
 
                     {/* INFORMAÇÕES */}
 
                     <View
-                      style={styles.appointmentContent}
+                      style={styles.historyContent}
                     >
-                      <Text style={styles.clientName}>
+                      <Text
+                        style={styles.clientName}
+                      >
                         {item.cliente}
                       </Text>
 
-                      <Text style={styles.serviceText}>
+                      <Text
+                        style={styles.serviceText}
+                      >
                         {item.servico}
                       </Text>
 
-                      <Text style={styles.addressText}>
-                        📍 {montarEndereco(item)}
+                      <Text
+                        style={styles.valueText}
+                      >
+                        💰 {item.valor}
                       </Text>
 
                       {item.observacoes ? (
@@ -566,30 +587,13 @@ export default function AgendaScreen({ goTo }) {
 
                       {/* AÇÕES */}
 
-                      <View style={styles.actionsRow}>
-                        {item.endereco ? (
-                          <TouchableOpacity
-                            style={
-                              styles.navigateButton
-                            }
-                            onPress={() =>
-                              abrirNavegacao(item)
-                            }
-                          >
-                            <Text
-                              style={
-                                styles.navigateButtonText
-                              }
-                            >
-                              🧭 Navegar
-                            </Text>
-                          </TouchableOpacity>
-                        ) : null}
-
+                      <View
+                        style={styles.actionsRow}
+                      >
                         <TouchableOpacity
                           style={styles.editButton}
                           onPress={() =>
-                            editarCompromisso(item)
+                            editarHistorico(item)
                           }
                         >
                           <Text
@@ -604,7 +608,7 @@ export default function AgendaScreen({ goTo }) {
                         <TouchableOpacity
                           style={styles.deleteButton}
                           onPress={() =>
-                            excluirCompromisso(
+                            excluirHistorico(
                               item.id
                             )
                           }
@@ -633,12 +637,13 @@ export default function AgendaScreen({ goTo }) {
             <View style={styles.formCard}>
               <Text style={styles.formTitle}>
                 {editandoId
-                  ? "Editar compromisso"
-                  : "Novo compromisso"}
+                  ? "Editar serviço"
+                  : "Novo serviço realizado"}
               </Text>
 
               <Text style={styles.formSubtitle}>
-                Preencha as informações do atendimento.
+                Registre as informações do serviço
+                realizado.
               </Text>
 
               {/* CLIENTE */}
@@ -656,7 +661,7 @@ export default function AgendaScreen({ goTo }) {
               {/* SERVIÇO */}
 
               <Text style={styles.label}>
-                Serviço
+                Serviço realizado
               </Text>
 
               <Input
@@ -681,67 +686,21 @@ export default function AgendaScreen({ goTo }) {
                 maxLength={10}
               />
 
-              {/* HORÁRIO */}
+              {/* VALOR */}
 
               <Text style={styles.label}>
-                Horário
+                Valor recebido
               </Text>
 
               <Input
-                placeholder="Ex.: 09:00"
-                value={horario}
+                placeholder="R$ 0,00"
+                value={valor}
                 onChangeText={(texto) =>
-                  setHorario(formatarHorario(texto))
+                  setValor(
+                    formatarValor(texto)
+                  )
                 }
                 keyboardType="numeric"
-                maxLength={5}
-              />
-
-              {/* ENDEREÇO */}
-
-              <Text
-                style={styles.formSectionTitle}
-              >
-                📍 Local do atendimento
-              </Text>
-
-              <Text style={styles.optionalText}>
-                O endereço é opcional.
-              </Text>
-
-              <Text style={styles.label}>
-                Endereço
-              </Text>
-
-              <Input
-                placeholder="Rua, avenida, etc."
-                value={endereco}
-                onChangeText={setEndereco}
-              />
-
-              {/* NÚMERO */}
-
-              <Text style={styles.label}>
-                Número
-              </Text>
-
-              <Input
-                placeholder="Número"
-                value={numero}
-                onChangeText={setNumero}
-                keyboardType="numeric"
-              />
-
-              {/* COMPLEMENTO */}
-
-              <Text style={styles.label}>
-                Complemento / referência
-              </Text>
-
-              <Input
-                placeholder="Ex.: Casa azul, próximo ao mercado"
-                value={complemento}
-                onChangeText={setComplemento}
               />
 
               {/* OBSERVAÇÕES */}
@@ -753,7 +712,7 @@ export default function AgendaScreen({ goTo }) {
               </Text>
 
               <Input
-                placeholder="Alguma informação importante sobre o atendimento"
+                placeholder="Alguma informação importante sobre o serviço"
                 value={observacoes}
                 onChangeText={setObservacoes}
                 multiline
@@ -765,9 +724,9 @@ export default function AgendaScreen({ goTo }) {
                 title={
                   editandoId
                     ? "Salvar alterações"
-                    : "Adicionar compromisso"
+                    : "Adicionar serviço"
                 }
-                onPress={salvarCompromisso}
+                onPress={salvarHistorico}
               />
 
               <Button
@@ -821,6 +780,51 @@ const styles = StyleSheet.create({
   },
 
   // ==========================================
+  // RESUMO
+  // ==========================================
+
+  summaryCard: {
+    flexDirection: "row",
+    backgroundColor: "#0A2F73",
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  summaryNumber: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#fff",
+  },
+
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#fff",
+  },
+
+  summaryLabel: {
+    fontSize: 12,
+    color: "#fff",
+    opacity: 0.85,
+    marginTop: 4,
+    textAlign: "center",
+  },
+
+  summaryDivider: {
+    width: 1,
+    height: 45,
+    backgroundColor: "#ffffff55",
+  },
+
+  // ==========================================
   // SEÇÃO
   // ==========================================
 
@@ -869,10 +873,10 @@ const styles = StyleSheet.create({
   },
 
   // ==========================================
-  // CARD DO COMPROMISSO
+  // CARD DO HISTÓRICO
   // ==========================================
 
-  appointmentCard: {
+  historyCard: {
     flexDirection: "row",
     backgroundColor: "#fff",
     borderRadius: 18,
@@ -900,14 +904,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  timeText: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "900",
-    marginTop: 5,
-  },
-
-  appointmentContent: {
+  historyContent: {
     flex: 1,
   },
 
@@ -925,11 +922,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  addressText: {
-    fontSize: 13,
-    color: "#555",
-    lineHeight: 18,
-    marginBottom: 4,
+  valueText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#16803c",
+    marginBottom: 5,
   },
 
   observationText: {
@@ -949,19 +946,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 7,
     marginTop: 6,
-  },
-
-  navigateButton: {
-    backgroundColor: "#0A2F73",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-
-  navigateButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "800",
   },
 
   editButton: {
@@ -1032,11 +1016,5 @@ const styles = StyleSheet.create({
     color: "#0A2F73",
     marginTop: 10,
     marginBottom: 4,
-  },
-
-  optionalText: {
-    fontSize: 12,
-    color: "#888",
-    marginBottom: 12,
   },
 });
